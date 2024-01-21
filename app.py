@@ -12,23 +12,27 @@
 # pip install streamlit yfinance
 # Reiniciar Visual code y listo! correr el codigo completo
 
-
+# Importamos librerias
 import streamlit as st
 import yfinance as yf
 
 # Título de la aplicación
 st.title('Dashboard Financiero')
 
-# Sidebar para navegación
-st.sidebar.header('Navegación')
-section = st.sidebar.radio('Selecciona una sección', ['Inicio', 'Datos Históricos'])
+# Barra lateral principal con pestañas
+selected_tab_main = st.sidebar.radio('Selecciona una sección:',
+                                     ['Inicio', 'Datos Históricos'])
+
+# Barra lateral secundaria con botones
+selected_tab_other = st.sidebar.selectbox('Otra Navegación:',
+                                          ['Sección 1', 'Sección 2', 'Sección 3'])
 
 # Contenido principal
-if section == 'Inicio':
-    st.write('¡Bienvenido a la sección de inicio!')
-    st.info('Este es un dashboard de prueba con Streamlit.')
+if selected_tab_main == 'Inicio':
+    st.header('Bienvenido a nuestro Dashboard Financiero')
+    st.write('Este es un dashboard de prueba con Streamlit.')
 
-elif section == 'Datos Históricos':
+elif selected_tab_main == 'Datos Históricos':
     # Símbolo del activo financiero
     symbol = st.text_input('Introduce el símbolo del activo financiero (por ejemplo, AAPL):')
 
@@ -41,6 +45,17 @@ elif section == 'Datos Históricos':
         # Gráfico interactivo
         st.line_chart(data['Close'])
 
-    # Información adicional
-    st.info('Esta sección muestra datos históricos del activo financiero.')
+# Contenido de la otra barra lateral
+if selected_tab_other == 'Sección 1':
+    st.sidebar.header('Contenido de la Sección 1')
+    st.sidebar.write('Este es el contenido de la Sección 1.')
 
+elif selected_tab_other == 'Sección 2':
+    st.sidebar.header('Contenido de la Sección 2')
+    st.sidebar.write('Este es el contenido de la Sección 2.')
+
+elif selected_tab_other == 'Sección 3':
+    st.sidebar.header('Contenido de la Sección 3')
+    st.sidebar.write('Este es el contenido de la Sección 3.')
+
+## Documentacion de los diferentes widgets https://docs.streamlit.io/1.14.0/library/api-reference/widgets
