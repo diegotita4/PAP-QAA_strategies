@@ -15,8 +15,12 @@
 import streamlit as st
 import yfinance as yf
 
+import os
 import sys
-sys.path.insert(1, '../functions')  # Asegúrate de que el directorio functions esté en el PATH
+print("Directorio actual:", os.getcwd())
+sys.path.insert(1, '../functions')
+print("Python Path:", sys.path)
+
 from sidebar import create_sidebar
 
 
