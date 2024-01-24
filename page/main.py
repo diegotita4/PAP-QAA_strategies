@@ -11,9 +11,11 @@
 # pip install streamlit yfinance
 # Reiniciar Visual code y listo! correr el codigo completo
 
+
 # Importamos librerias
 import streamlit as st
 import yfinance as yf
+import pandas as pd
 
 import os
 import sys
@@ -29,9 +31,13 @@ def create_sidebar():
     selected_page = st.sidebar.selectbox("Seleccione una página", pages)
     return selected_page
 
-def page1():
-    st.title("Página 1")
-    st.write("Bienvenido a la página 1")
+st.title("Página 1")
+st.write("Bienvenido a la página 1")
+st.write("Pabul hermoso")
+
+
+
+
 
 
 if __name__ == "__main__":
