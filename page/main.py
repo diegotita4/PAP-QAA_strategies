@@ -16,6 +16,7 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import importlib.util
 
 import os
 import sys
@@ -25,23 +26,30 @@ import sys
 
 # from sidebar import create_sidebar
 
+def show():
+    st.title("Página Principal")
+    st.markdown("Aqui pondremos todo lo que debera estar en la pagina principal")
+
+
+
 def create_sidebar():
     st.sidebar.title('Navegación')
     pages = [file.replace('.py', '') for file in os.listdir('page') if file.endswith('.py')]
     selected_page = st.sidebar.selectbox("Seleccione una página", pages)
     return selected_page
 
-st.title("Página 1")
-st.write("Bienvenido a la página 1")
-st.write("Pabul hermoso")
 
+def load_page(page_name):
+    # Construye el path al archivo .py en la carpeta page
+    page_path = os.path.join('page', f'{page_name}.py')
+    # Importa el módulo correspondiente al nombre de la página
+    spec = importlib.util.spec_from_file_location(page_name, page_path)
+    page_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(page_module)
+    # Ejecuta la función show() del módulo importado
+    page_module.show()
 
-
-
-
-
+# Esto debe estar al final de tu main.py
 if __name__ == "__main__":
     selected_page = create_sidebar()
-    if selected_page == 'page1':
-        page1()
-    
+    load_page(selected_page)
