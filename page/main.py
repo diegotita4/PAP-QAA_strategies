@@ -27,7 +27,7 @@ import sys
 # from sidebar import create_sidebar
 
 def show():
-    st.markdown(f"{Introduccion}")
+    st.markdown(f"{Introduccion}", unsafe_allow_html=True)
 
 
 
@@ -57,6 +57,7 @@ def load_page(page_name):
     # Ejecuta la función show() del módulo importado
     page_module.show()
 
+
 # Esto debe estar al final de tu main.py
 if __name__ == "__main__":
     selected_page = create_sidebar()
@@ -64,8 +65,12 @@ if __name__ == "__main__":
 
 
 
+# Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
+
 Introduccion = """
-                # Introducción al Proyecto de Backtesting de Estrategias de Asset Allocation
+<div style="text-align: justify;">
+
+# Proyecto de Backtesting de Estrategias de Asset Allocation
 
 En el dinámico mundo de las inversiones, la capacidad para tomar decisiones informadas y efectivas es fundamental. Esto se vuelve aún más crítico cuando se trata de la asignación de activos, una piedra angular en la gestión de carteras de inversión. El proyecto que se propone abordar aquí se centra en la investigación, documentación, implementación y backtesting de diversas estrategias de quantitative asset allocation. La relevancia de este proyecto radica en su potencial para revolucionar la forma en que los inversores y gestores de carteras abordan la asignación de activos.
 
@@ -95,5 +100,5 @@ Los resultados de este proyecto tendrán aplicaciones prácticas significativas 
 - **Adaptabilidad a Cambios en el Mercado:** La capacidad de realizar backtesting dinámico permite a los usuarios adaptar sus estrategias a los cambios en el mercado, un aspecto crucial para la gestión exitosa de inversiones en un entorno económico en constante evolución.
 
 En resumen, este proyecto representa una oportunidad emocionante para avanzar en el campo de la asignación de activos, proporcionando herramientas y conocimientos valiosos para una amplia gama de usuarios, desde inversores individuales hasta grandes gestores de carteras.
-
+</div>
                 """

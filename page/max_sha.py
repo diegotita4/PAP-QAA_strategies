@@ -3,9 +3,12 @@
 import streamlit as st
              
 def show():
-    st.markdown(f"{texto}")
+    st.markdown(f"{texto}", unsafe_allow_html=True)
 
-texto = """# Estrategia de Inversión del Máximo de Sharpe
+texto = """
+<div style="text-align: justify;">
+
+# Estrategia de Inversión del Máximo de Sharpe
 
 La estrategia de inversión del Máximo de Sharpe, también conocida como el ratio de Sharpe, es una técnica fundamental en la gestión de carteras de inversión. Desarrollada por William F. Sharpe en 1966, esta estrategia se utiliza para evaluar el rendimiento ajustado al riesgo de un portafolio y para optimizar la asignación de activos.
 
@@ -59,4 +62,5 @@ Aquí, las acciones tienen un ratio de Sharpe más alto, lo que indica un mejor 
 ## Consideraciones Finales
 
 La estrategia del Máximo de Sharpe es una herramienta valiosa para los inversores al buscar optimizar su portafolio para el mejor rendimiento ajustado al riesgo. Sin embargo, como con cualquier estrategia de inversión, es importante ser consciente de sus limitaciones y considerar una variedad de factores, incluyendo los objetivos de inversión, el horizonte de tiempo y la tolerancia al riesgo. Además, es crucial realizar un seguimiento y un reajuste periódico del portafolio para reflejar los cambios en el mercado y en las condiciones económicas.
+</div>
 """

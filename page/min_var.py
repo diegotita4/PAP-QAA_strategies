@@ -2,9 +2,12 @@
 import streamlit as st
 
 def show():
-    st.markdown(f"{texto}")
+    st.markdown(f"{texto}", unsafe_allow_html=True)
     
-texto = """ # Estrategia de Inversión de Mínima Varianza
+texto = """
+<div style="text-align: justify;">
+
+ # Estrategia de Inversión de Mínima Varianza
 
 La estrategia de inversión de mínima varianza es un enfoque en la gestión de carteras de inversión que se centra en minimizar la volatilidad del portafolio. Esta estrategia es particularmente atractiva para inversores que buscan reducir el riesgo en sus inversiones.
 
@@ -61,4 +64,5 @@ Imagina que deseas invertir en acciones y bonos. Las acciones tienen un potencia
 ## Consideraciones Finales
 
 La estrategia de mínima varianza es ideal para inversores que priorizan la estabilidad y la reducción del riesgo sobre los altos rendimientos. Es importante tener en cuenta que ninguna estrategia puede eliminar completamente el riesgo, y la diversificación no garantiza ganancias o protege contra pérdidas en mercados en declive. Además, esta estrategia requiere un monitoreo constante y ajustes regulares para mantener el perfil de riesgo deseado.
+</div>
 """
