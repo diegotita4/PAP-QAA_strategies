@@ -17,6 +17,8 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import importlib.util
+import time
+
 
 import os
 import sys
@@ -27,7 +29,61 @@ import sys
 # from sidebar import create_sidebar
 
 def show():
+    # show_stock_ticker_bar(stocks)
     st.markdown(f"{Introduccion}", unsafe_allow_html=True)
+
+
+
+
+
+# def get_stock_prices(stocks):
+#     prices = []
+#     for stock in stocks:
+#         try:
+#             # Descargar datos del último día de negociación
+#             data = yf.download(stock, period="1d")
+#             # Obtener el último precio de cierre disponible
+#             price = data['Close'].iloc[-1] if not data.empty else "No Disponible"
+#             prices.append(f"{stock}: ${price:.2f}")
+#         except Exception as e:
+#             prices.append(f"{stock}: Error al obtener datos")
+#     return " | ".join(prices)
+
+
+
+# def show_stock_ticker_bar(stocks):
+#     st.markdown("""
+#     <style>
+#     .ticker-wrap {
+#         width: 100%;
+#         overflow: hidden;
+#         position: fixed;
+#         top: 0;
+#         background-color: #4CAF50;
+#         padding: 10px;
+#         z-index: 999;
+#     }
+#     .ticker {
+#         display: inline-block;
+#         white-space: nowrap;
+#         padding-left: 100%;
+#         animation: ticker 30s linear infinite;
+#     }
+#     .ticker__item {
+#         display: inline-block;
+#         padding: 0 2rem;
+#     }
+#     @keyframes ticker {
+#         0% { transform: translate3d(0, 0, 0); }
+#         100% { transform: translate3d(-100%, 0, 0); }
+#     }
+#     </style>
+#     <div class="ticker-wrap">
+#         <div class="ticker">
+#             <div class="ticker__item">""" + get_stock_prices(stocks) + """</div>
+#         </div>
+#     </div>
+#     """, unsafe_allow_html=True)
 
 
 
@@ -66,6 +122,10 @@ if __name__ == "__main__":
 
 
 # Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
+
+# Lista de símbolos de acciones para mostrar
+stocks = ["AAPL", "GOOGL", "MSFT", "AMZN", "META"]
+
 
 Introduccion = """
 <div style="text-align: justify;">
