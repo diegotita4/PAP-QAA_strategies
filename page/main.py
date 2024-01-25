@@ -32,11 +32,20 @@ def show():
 
 
 
-def create_sidebar():
+def create_sidebar():   #  NAVEGACION 1
     st.sidebar.title('Navegación')
     pages = [file.replace('.py', '') for file in os.listdir('page') if file.endswith('.py')]
     selected_page = st.sidebar.selectbox("Seleccione una página", pages)
     return selected_page
+
+def create_sidebar():   #  NAVEGACION 1
+    st.sidebar.title('Navegación')
+    # Obtener los nombres de los archivos sin la extensión .py y excluir el archivo main.py
+    pages = [file.replace('.py', '') for file in os.listdir('page') if file.endswith('.py') ]
+    # Usar radio buttons en lugar de un selectbox para la selección de la página
+    selected_page = st.sidebar.radio("Seleccione una página", pages)
+    return selected_page
+
 
 
 def load_page(page_name):
