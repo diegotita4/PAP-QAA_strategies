@@ -7,104 +7,6 @@ import time
 import os
 import sys
 
-def show():
-    # show_stock_ticker_bar(stocks)
-    st.markdown(f"{Introduccion}", unsafe_allow_html=True)
-
-
-
-# def get_stock_prices(stocks):
-#     prices = []
-#     for stock in stocks:
-#         try:
-#             # Descargar datos del último día de negociación
-#             data = yf.download(stock, period="1d")
-#             # Obtener el último precio de cierre disponible
-#             price = data['Close'].iloc[-1] if not data.empty else "No Disponible"
-#             prices.append(f"{stock}: ${price:.2f}")
-#         except Exception as e:
-#             prices.append(f"{stock}: Error al obtener datos")
-#     return " | ".join(prices)
-
-
-
-# def show_stock_ticker_bar(stocks):
-#     st.markdown("""
-#     <style>
-#     .ticker-wrap {
-#         width: 100%;
-#         overflow: hidden;
-#         position: fixed;
-#         top: 0;
-#         background-color: #4CAF50;
-#         padding: 10px;
-#         z-index: 999;
-#     }
-#     .ticker {
-#         display: inline-block;
-#         white-space: nowrap;
-#         padding-left: 100%;
-#         animation: ticker 30s linear infinite;
-#     }
-#     .ticker__item {
-#         display: inline-block;
-#         padding: 0 2rem;
-#     }
-#     @keyframes ticker {
-#         0% { transform: translate3d(0, 0, 0); }
-#         100% { transform: translate3d(-100%, 0, 0); }
-#     }
-#     </style>
-#     <div class="ticker-wrap">
-#         <div class="ticker">
-#             <div class="ticker__item">""" + get_stock_prices(stocks) + """</div>
-#         </div>
-#     </div>
-#     """, unsafe_allow_html=True)
-
-
-
-def create_sidebar():   #  NAVEGACION 1
-    st.sidebar.title('Navegación')
-    pages = [file.replace('.py', '') for file in os.listdir('page') if file.endswith('.py')]
-    selected_page = st.sidebar.selectbox("Seleccione una página", pages)
-    return selected_page
-
-def create_sidebar():   #  NAVEGACION 1
-    st.sidebar.title('Navegación')
-    # Obtener los nombres de los archivos sin la extensión .py y excluir el archivo main.py
-    pages = [file.replace('.py', '') for file in os.listdir('page') if file.endswith('.py') ]
-    # Usar radio buttons en lugar de un selectbox para la selección de la página
-    selected_page = st.sidebar.radio("Seleccione una página", pages)
-    return selected_page
-
-
-
-def load_page(page_name):
-    # Construye el path al archivo .py en la carpeta page
-    page_path = os.path.join('page', f'{page_name}.py')
-    # Importa el módulo correspondiente al nombre de la página
-    spec = importlib.util.spec_from_file_location(page_name, page_path)
-    page_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(page_module)
-    # Ejecuta la función show() del módulo importado
-    page_module.show()
-
-
-
-# Esto debe estar al final de tu main.py
-if __name__ == "__main__":
-    selected_page = create_sidebar()
-    load_page(selected_page)
-
-
-
-# Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
-
-# Lista de símbolos de acciones para mostrar
-stocks = ["AAPL", "GOOGL", "MSFT", "AMZN", "META"]
-
-
 
 Introduccion = """
 <div style="text-align: justify;">
@@ -141,3 +43,54 @@ Los resultados de este proyecto tendrán aplicaciones prácticas significativas 
 En resumen, este proyecto representa una oportunidad emocionante para avanzar en el campo de la asignación de activos, proporcionando herramientas y conocimientos valiosos para una amplia gama de usuarios, desde inversores individuales hasta grandes gestores de carteras.
 </div>
                 """
+
+
+def show():
+    # show_stock_ticker_bar(stocks)
+    st.markdown(f"{Introduccion}", unsafe_allow_html=True)
+
+
+
+def create_sidebar():   #  NAVEGACION 1
+    st.sidebar.title('Navegación')
+    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py')]
+    selected_page = st.sidebar.selectbox("Seleccione una página", pages)
+    return selected_page
+
+def create_sidebar():   #  NAVEGACION 1
+    st.sidebar.title('Navegación')
+    # Obtener los nombres de los archivos sin la extensión .py y excluir el archivo main.py
+    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py') ]
+    # Usar radio buttons en lugar de un selectbox para la selección de la página
+    selected_page = st.sidebar.radio("Seleccione una página", pages)
+    return selected_page
+
+
+
+def load_page(page_name):
+    # Construye el path al archivo .py en la carpeta page
+    page_path = os.path.join('streamlit', f'{page_name}.py')
+    # Importa el módulo correspondiente al nombre de la página
+    spec = importlib.util.spec_from_file_location(page_name, page_path)
+    page_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(page_module)
+    # Ejecuta la función show() del módulo importado
+    page_module.show()
+
+
+
+# Esto debe estar al final de tu main.py
+if __name__ == "__main__":
+    show()
+    selected_page = create_sidebar()
+    load_page(selected_page)
+
+
+
+# Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
+
+# Lista de símbolos de acciones para mostrar
+stocks = ["AAPL", "GOOGL", "MSFT", "AMZN", "META"]
+
+
+
