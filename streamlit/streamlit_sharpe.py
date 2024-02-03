@@ -1,6 +1,14 @@
 
 import streamlit as st
-
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import importlib.util
+import time
+import os
+import sys
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 
 # PONCHO INTENTO IMPLEMENTARLO DE MANERA DIINAMICA 1
@@ -136,8 +144,3 @@ Aquí, las acciones tienen un ratio de Sharpe más alto, lo que indica un mejor 
 La estrategia del Máximo de Sharpe es una herramienta valiosa para los inversores al buscar optimizar su portafolio para el mejor rendimiento ajustado al riesgo. Sin embargo, como con cualquier estrategia de inversión, es importante ser consciente de sus limitaciones y considerar una variedad de factores, incluyendo los objetivos de inversión, el horizonte de tiempo y la tolerancia al riesgo. Además, es crucial realizar un seguimiento y un reajuste periódico del portafolio para reflejar los cambios en el mercado y en las condiciones económicas.
 </div>
 """
-
-def show():
-    st.title("Página de Ejemplo")
-    st.write("¡Bienvenido a la página de ejemplo!")
-    

@@ -57,18 +57,14 @@ def create_sidebar():   #  NAVEGACION 1
     selected_page = st.sidebar.selectbox("Seleccione una página", pages)
     return selected_page
 
-def create_sidebar():   #  NAVEGACION 1
+def create_sidebar():   # NAVEGACIÓN
     st.sidebar.title('Navegación')
-    # Obtener los nombres de los archivos sin la extensión .py y excluir el archivo main.py
-    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py') ]
-    # Usar radio buttons en lugar de un selectbox para la selección de la página
+    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py') and file != 'streamlit_main.py']
     selected_page = st.sidebar.radio("Seleccione una página", pages)
     return selected_page
 
-
-
 def load_page(page_name):
-    # Construye el path al archivo .py en la carpeta page
+    # Construye el path al archivo .py en la carpeta streamlit
     page_path = os.path.join('streamlit', f'{page_name}.py')
     # Importa el módulo correspondiente al nombre de la página
     spec = importlib.util.spec_from_file_location(page_name, page_path)
@@ -77,14 +73,9 @@ def load_page(page_name):
     # Ejecuta la función show() del módulo importado
     page_module.show()
 
-
-
-# Esto debe estar al final de tu main.py
 if __name__ == "__main__":
-    show()
     selected_page = create_sidebar()
     load_page(selected_page)
-
 
 
 # Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
