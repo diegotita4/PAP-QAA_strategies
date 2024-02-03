@@ -2,7 +2,7 @@
 # -- --------------------------------------------------------------------------------------------------- -- #
 # -- project: A SHORT DESCRIPTION OF THE PROJECT                                                         -- #
 # -- script: requirements.txt : text file with the required libraries for the project                    -- #
-# -- authors: YOUR GITHUB USER NAME                                                                       -- #
+# -- authors: YOUR GITHUB USER NAME                                                                      -- #
 # -- license: GPL-3.0 License                                                                            -- #
 # -- repository: YOUR REPOSITORY URL                                                                     -- #
 # -- --------------------------------------------------------------------------------------------------- -- #
