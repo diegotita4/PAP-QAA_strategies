@@ -45,23 +45,27 @@ En resumen, este proyecto representa una oportunidad emocionante para avanzar en
                 """
 
 
-def show():
+def show_main_page():
     # show_stock_ticker_bar(stocks)
     st.markdown(f"{Introduccion}", unsafe_allow_html=True)
 
 
 
-def create_sidebar():   #  NAVEGACION 1
-    st.sidebar.title('Navegación')
-    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py')]
-    selected_page = st.sidebar.selectbox("Seleccione una página", pages)
-    return selected_page
+# def create_sidebar():   #   este no esta actualizado con los cambios, no se si funcione
+#     st.sidebar.title('Navegación')
+#     pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py')]
+#     selected_page = st.sidebar.selectbox("Seleccione una página", pages)
+#     return selected_page
 
-def create_sidebar():   # NAVEGACIÓN
+def create_sidebar():
     st.sidebar.title('Navegación')
-    pages = [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py') and file != 'streamlit_main.py']
+    # Añadir manualmente la opción de la página principal
+    pages = ['Página Principal']  # Página principal como primera opción
+    # Agregar el resto de las páginas dinámicamente
+    pages += [file.replace('.py', '') for file in os.listdir('streamlit') if file.endswith('.py') and file != 'streamlit_main.py']
     selected_page = st.sidebar.radio("Seleccione una página", pages)
     return selected_page
+
 
 def load_page(page_name):
     # Construye el path al archivo .py en la carpeta streamlit
@@ -75,7 +79,13 @@ def load_page(page_name):
 
 if __name__ == "__main__":
     selected_page = create_sidebar()
-    load_page(selected_page)
+    # Verificar si la selección es la página principal
+    if selected_page == 'Página Principal':
+        # Llamar a una función para mostrar el contenido de la página principal
+        show_main_page()  # Asegúrate de definir esta función
+    else:
+        # Cargar una de las páginas dinámicas
+        load_page(selected_page)
 
 
 # Aqui pondremos definiciones, no importa que este abajo de lo de "__main__"
