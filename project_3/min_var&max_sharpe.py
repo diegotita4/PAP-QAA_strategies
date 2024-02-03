@@ -1,4 +1,14 @@
-## Librerias
+
+"""
+# -- --------------------------------------------------------------------------------------------------- -- #
+# -- project: A SHORT DESCRIPTION OF THE PROJECT                                                         -- #
+# -- script: main.py : python script with the main functionality                                         -- #
+# -- authors: YOUR GITHUB USER NAME                                                                      -- #
+# -- license: THE LICENSE TYPE AS STATED IN THE REPOSITORY                                               -- #
+# -- repository: YOUR REPOSITORY URL                                                                     -- #
+# -- --------------------------------------------------------------------------------------------------- -- #
+"""
+
 import numpy as np
 import yfinance as yf
 from scipy.optimize import minimize
