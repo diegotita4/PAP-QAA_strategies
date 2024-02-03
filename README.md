@@ -22,7 +22,6 @@ Or you can manually install one by one using the name and version in the file.
 Las aplicaciones del Backtesting de Estrategias de AA son enfocadas a carteras de activos, aqui se encuentra el codigo que es necesario utilizar para poder realizar las pruebas necesarias con todos los activos que se deseen siempre que estén en el Sistema Internacional de Cotizaciónes (SIC) o que sean encontradas a traves de la plataforma de *Yahoo Finance*, cabe mencionar que las estrategias estarán probadas en distintos activos pero la mayoria de ellos son acciones y a largo plazo por lo que su uso en trading no es recomendado.
 
 Se encuentran las pruebas en formato de pagina web y podrán ser modificadas con los activos requeridos y las pruebas seran modificadas automaticamente para obtener los resultados.
-*Add here examples of core functionalities for the project in this repository.*
 
 ## Authors
 
