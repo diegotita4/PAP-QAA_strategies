@@ -1,0 +1,14 @@
+
+# -- --------------------------------------------------------------------------------------------------- -- #
+# -- project: A SHORT DESCRIPTION OF THE PROJECT                                                         -- #
+# -- script: requirements.txt : text file with the required libraries for the project                    -- #
+# -- authors: YOUR GITHUB USER NAME                                                                      -- #
+# -- license: GPL-3.0 License                                                                            -- #
+# -- repository: YOUR REPOSITORY URL                                                                     -- #
+# -- --------------------------------------------------------------------------------------------------- -- #
+
+numpy >= 1.26.3
+yfinance >= 0.2.36
+scipy.optimize >= 1.12.0
+pandas >= 2.2.0
+streamlit >= 1.31.0
