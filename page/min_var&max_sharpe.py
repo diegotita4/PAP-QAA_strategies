@@ -2,7 +2,12 @@
 import numpy as np
 import yfinance as yf
 from scipy.optimize import minimize
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 
+import os
+import sys
 ## Explicacion codigo
 # El código proporcionado define una clase `PortfolioOptimizer` en Python diseñada para optimizar carteras de inversión utilizando datos históricos de precios de acciones. La clase utiliza las bibliotecas `numpy` para cálculos numéricos, `yfinance` para descargar datos financieros, y `scipy` para optimización. A continuación, se detalla la funcionalidad de cada parte del código:
 
@@ -207,3 +212,77 @@ for method in methods:
     print("Pesos del Portafolio de Mínima Varianza:", weights_min_variance)
     print("Pesos del Portafolio de Máximo Ratio de Sharpe:", weights_max_sharpe)
     print("---")
+
+
+
+# PONCHO INTENTO IMPLEMENTARLO DE MANERA DIINAMICA 1
+    
+def optimize_sharpe_ratio(tickers, start_date, end_date, risk_free_rate=0.0):
+    # Cargar datos
+    data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+    returns = data.pct_change().dropna()
+    mean_returns = returns.mean()
+    cov_matrix = returns.cov()
+
+    # Funciones auxiliares
+    def portfolio_performance(weights):
+        port_return = np.dot(weights, mean_returns) * 252
+        port_volatility = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))) * np.sqrt(252)
+        sharpe_ratio = (port_return - risk_free_rate) / port_volatility
+        return -sharpe_ratio  # Negativo porque minimizamos
+
+    # Restricciones y límites
+    bounds = tuple((0.1, 1) for _ in tickers)
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1},)
+
+    # Optimización
+    initial_guess = np.ones(len(tickers)) / len(tickers)
+    result = minimize(portfolio_performance, initial_guess, method='SLSQP', bounds=bounds, constraints=constraints)
+
+    if result.success:
+        return result.x
+    else:
+        raise ValueError('No se pudo encontrar una solución óptima.')
+    
+
+def show():
+    st.title("Optimizador de Portafolio - Ratio de Sharpe")
+
+    # Entrada de usuario para tickers
+    user_input_tickers = st.text_input("Ingrese los tickers separados por coma", "AAPL, MSFT, GOOGL, AMZN")
+    tickers = [ticker.strip() for ticker in user_input_tickers.split(',')]
+
+    # Entrada de usuario para fechas
+    start_date = st.date_input("Fecha de inicio", pd.to_datetime("2020-01-01"))
+    end_date = st.date_input("Fecha de fin", pd.to_datetime("2021-01-01"))
+
+    # Entrada de usuario para la tasa libre de riesgo
+    risk_free_rate = st.number_input("Tasa Libre de Riesgo", value=0.0, format="%.2f")
+
+    if st.button("Optimizar"):
+        weights = optimize_sharpe_ratio(tickers, start_date, end_date, risk_free_rate)
+        weights_rounded = np.round(weights * 100, 2)
+        
+        # Mostrar los pesos óptimos
+        st.subheader("Pesos Óptimos del Portafolio")
+        for ticker, weight in zip(tickers, weights_rounded):
+            st.write(f"{ticker}: {weight}%")
+        
+        # Cargar datos nuevamente para el período seleccionado
+        data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+        returns = data.pct_change().dropna()
+        
+        # Calcular el rendimiento diario del portafolio
+        portfolio_returns = (returns * weights).sum(axis=1)
+        
+        # Calcular el rendimiento acumulado
+        cumulative_returns = (1 + portfolio_returns).cumprod()
+        
+        # Graficar el rendimiento acumulado
+        plt.figure(figsize=(10, 6))
+        cumulative_returns.plot()
+        plt.title('Rendimiento Acumulado del Portafolio')
+        plt.xlabel('Fecha')
+        plt.ylabel('Rendimiento Acumulado')
+        plt.grid(True)
+        st.pyplot(plt)
