@@ -45,7 +45,7 @@ class PortfolioOptimizer:
         return result.x
 
 # Ejemplo de uso con tickers
-ticker_symbols = ['AAPL', 'GOOGL', 'MSFT']  # Puedes cambiar estos tickers según tus preferencias
+ticker_symbols = ['AAPL', 'TSLA', 'MSFT']  # Puedes cambiar estos tickers según tus preferencias
 portfolio_optimizer = PortfolioOptimizer(ticker_symbols)
 
 weights_min_variance = portfolio_optimizer.minimum_variance_portfolio()
