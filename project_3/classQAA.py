@@ -9,50 +9,23 @@
 # -- --------------------------------------------------------------------------------------------------- -- #
 """
 
-import numpy as np
-import yfinance as yf
-from scipy.optimize import minimize
 
-## Explicacion codigo
-# El código proporcionado define una clase `PortfolioOptimizer` en Python diseñada para optimizar carteras de inversión utilizando datos históricos de precios de acciones. La clase utiliza las bibliotecas `numpy` para cálculos numéricos, `yfinance` para descargar datos financieros, y `scipy` para optimización. A continuación, se detalla la funcionalidad de cada parte del código:
+class QAA:
+    def __init__(self, tickers, risk_free_rate=0.0, bounds=None):
+        """
+        Initializes the Portfolio Optimizer object with given parameters.
 
-### Clase `PortfolioOptimizer`
+        Parameters
+        ----------
+        tickers : list of str
+            Ticker symbols for assets in the portfolio.
+        risk_free_rate : float, optional
+            Risk-free rate of return, default is 0.0.
+        bounds : list of tuple, optional
+            Bounds for asset weights in the optimization, each tuple is (min, max) for an asset.
+        """
 
-#- **`__init__` (Método inicializador):** Este método se llama automáticamente al crear una instancia de `PortfolioOptimizer`. Inicializa la instancia con los tickers (símbolos de las acciones) proporcionados, un tipo de interés libre de riesgo, y obtiene los datos de retorno y la matriz de covarianza de los activos mediante el método `get_portfolio_data`.
-
-#- **`get_portfolio_data` (Obtener datos del portafolio):** Descarga los precios ajustados al cierre de los tickers especificados entre las fechas de inicio y fin. Calcula los retornos diarios y la matriz de covarianza de estos retornos. Devuelve los retornos, la matriz de covarianza y el número de activos.
-
-#- **`_calculate_portfolio_metrics` (Calcular métricas del portafolio):** Calcula y devuelve el retorno esperado y la volatilidad (riesgo) del portafolio basado en los pesos actuales de los activos, donde los retornos se anualizan multiplicándolos por 252 (días hábiles en un año).
-
-### Métodos de Optimización
-
-#- **`minimum_variance_portfolio` (Portafolio de mínima varianza):** Utiliza la función `minimize` de SciPy para encontrar los pesos de los activos que minimizan la volatilidad del portafolio. Se definen límites para asegurar que cada peso esté entre 0.10 y 1, y una restricción para que la suma de los pesos sea igual a 1.
-
-#- **`maximum_sharpe_ratio_portfolio` (Portafolio de máximo ratio de Sharpe):** Encuentra los pesos que maximizan el ratio de Sharpe del portafolio (retorno del portafolio sobre su volatilidad, ajustado por el tipo libre de riesgo), también asegurando que cada peso esté entre 0.10 y 1 y que la suma de pesos sea 1.
-
-### Métodos Auxiliares
-
-#- **`_variance_objective` (Objetivo de varianza):** Una función objetivo usada por el optimizador para calcular la volatilidad del portafolio, basada en la matriz de covarianza `sigma` y los pesos actuales.
-
-#- **`_sharpe_objective` (Objetivo del ratio de Sharpe):** Calcula el negativo del ratio de Sharpe para ser utilizado en la optimización. Se busca maximizar el ratio de Sharpe, lo que se logra minimizando su negativo.
-
-### Ejemplo de Uso
-
-#El código final crea una instancia de `PortfolioOptimizer` con un conjunto de tickers y un tipo de interés libre de riesgo. Luego, calcula y muestra los pesos de los activos para el portafolio de mínima varianza y el portafolio de máximo ratio de Sharpe, aplicando las restricciones y límites mencionados.
-
-### Importancia de Cada Parte
-
-#- **Optimización de Portafolios:** Este proceso es fundamental en la gestión financiera y la inversión. Ayuda a los inversores a determinar la mejor distribución de sus activos para maximizar el retorno ajustado al riesgo.
-  
-#- **Ratio de Sharpe:** Es una medida del rendimiento ajustado al riesgo. Un ratio más alto indica un mejor rendimiento ajustado al riesgo.
-
-#- **Mínima Varianza:** Buscar el portafolio de mínima varianza ayuda a los inversores a minimizar el riesgo.
-
-# Este enfoque cuantitativo para la selección de portafolios permite a los inversores tomar decisiones basadas en datos y estadísticas, en lugar de intuición o especulación.
-
-class PortfolioOptimizer:
-    def __init__(self, tickers, risk_free_rate=0.0):
-        self.returns, self.cov_matrix, self.num_assets = self.get_portfolio_data(tickers)
+        self.tickers = tickers
         self.rf = risk_free_rate
         self.bounds = bounds if bounds is not None else [(0.10, 1.0) for _ in range(len(tickers))]
         self.returns, self.cov_matrix, self.num_assets = self.get_portfolio_data(tickers)
@@ -238,6 +211,7 @@ class PortfolioOptimizer:
         else:
             raise ValueError("Unsupported optimization method")
 
+
     def _slsqp_optimization(self, optimization_type, threshold_return=0.0):
         """
         Performs SLSQP optimization for the portfolio.
@@ -274,21 +248,4 @@ class PortfolioOptimizer:
             constraints=constraints
         )
         return result.x
-
-    def minimum_variance_portfolio(self, method='SLSQP'):
-        return self.optimize_portfolio(lambda x: self._calculate_portfolio_metrics(x)[1], method)
-
-    def maximum_sharpe_ratio_portfolio(self, method='SLSQP'):
-        return self.optimize_portfolio(lambda x: -self._sharpe_objective(x), method)
-
-# Ejemplo de uso:
-portfolio_optimizer = PortfolioOptimizer(['AAPL', 'AMZN', 'GOOGL', 'MSFT'], 0.02)
-
-methods = ['SLSQP', 'TNC', 'L-BFGS-B']
-for method in methods:
-    weights_min_variance = portfolio_optimizer.minimum_variance_portfolio(method)
-    weights_max_sharpe = portfolio_optimizer.maximum_sharpe_ratio_portfolio(method)
-    print(f"Método: {method}")
-    print("Pesos del Portafolio de Mínima Varianza:", weights_min_variance)
-    print("Pesos del Portafolio de Máximo Ratio de Sharpe:", weights_max_sharpe)
-    print("---")
+    
