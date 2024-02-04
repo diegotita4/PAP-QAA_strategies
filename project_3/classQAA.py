@@ -11,7 +11,7 @@
 
 
 class QAA:
-    def __init__(self, tickers, risk_free_rate=0.0, bounds=None):
+    def __init__(self, tickers, start, end, risk_free_rate=0.0, bounds=None):
         """
         Initializes the Portfolio Optimizer object with given parameters.
 
@@ -27,11 +27,13 @@ class QAA:
 
         self.tickers = tickers
         self.rf = risk_free_rate
+        self.star = start
+        self.end = end
         self.bounds = bounds if bounds is not None else [(0.10, 1.0) for _ in range(len(tickers))]
-        self.returns, self.cov_matrix, self.num_assets = self.get_portfolio_data(tickers)
+        self.returns, self.cov_matrix, self.num_assets = self.get_portfolio_data(tickers, start, end)
 
 
-    def get_portfolio_data(self, tickers):
+    def get_portfolio_data(self, tickers, start, end):
         """
         Fetches and prepares portfolio data from Yahoo Finance.
 
@@ -46,7 +48,7 @@ class QAA:
             Returns, covariance matrix, and number of assets in the portfolio.
         """
 
-        data = yf.download(tickers, start="2020-01-01", end="2023-01-23")['Adj Close']
+        data = yf.download(tickers, start=start, end=end)['Adj Close']
         returns = data.pct_change().dropna()
         cov_matrix = returns.cov().to_numpy()
         num_assets = len(tickers)
