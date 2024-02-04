@@ -11,7 +11,7 @@
 
 
 class QAA:
-    def __init__(self, tickers, start, end, risk_free_rate=0.0, bounds=None):
+    def __init__(self, tickers, start, end, risk_free_rate=0.0, bounds=None, initial_cash=1000000):
         """
         Initializes the Portfolio Optimizer object with given parameters.
 
@@ -29,6 +29,8 @@ class QAA:
             Risk-free rate of return, default is 0.0.
         bounds : list of tuple, optional
             Bounds for asset weights in the optimization, each tuple is (min, max) for an asset.
+        initial_cash : int, optional
+            Amount of cash to start the portafolio
         """
 
         self.tickers = tickers
@@ -36,7 +38,9 @@ class QAA:
         self.start = start
         self.end = end
         self.bounds = bounds if bounds is not None else [(0.10, 1.0) for _ in range(len(tickers))]
+        self.initial_cash = initial_cash
         self.returns, self.cov_matrix, self.num_assets = self.get_portfolio_data(tickers, start, end)
+        self.asset_allocations = []  # Inicializar la lista para guardar las asignaciones de efectivo para cada activo
 
 
     def get_portfolio_data(self, tickers, start, end):
@@ -258,35 +262,91 @@ class QAA:
         return result.x
     
 
+    def allocate_cash_to_assets(self, weights):
+        """
+        Allocates initial cash to assets based on optimized weights and saves the allocations.
+        
+        Parameters
+        - weights: np.array
+            the optimized asset weights for the portafolio 
 
-    if __name__ == "__main__":
-        # Definir los tickers y parámetros iniciales
-        tickers = ['ABBV', 'MET', 'OXY', 'PERI']
-        date_start = "2020-01-01"
-        date_end = "2023-01-01"
-        # Bounds (restricciones)
-        lower_bounds = 0.1 
-        upper_bounds = 1.0
-        risk_free_rate = 0.055 / 252  # Tasa libre de riesgo ajustada diariamente
-        optimizer = PortfolioOptimizer(tickers, date_start, date_end, risk_free_rate=risk_free_rate, bounds=[(lower_bounds, upper_bounds) for _ in tickers])
+        Returns
+        -------
+        ndarray
+            Weights for the portfolio in cash.
+        """
 
-        # Función para imprimir los resultados
-        def print_optimized_weights(tickers, weights, optimization_type):
-            print(f"Optimized Weights for {optimization_type}:")
-            for ticker, weight in zip(tickers, weights):
-                print(f"{ticker}: {weight*100:.2f}%")
-            print("\n")  # Agrega una línea en blanco para separar los resultados
+        # Amount in each asset
+        investment_amounts = self.initial_cash * weights
+        
+        # Save the amount 
+        self.asset_allocations = [{'ticker': ticker, 'allocation': amount} for ticker, amount in zip(self.tickers, investment_amounts)]
+        
+        # Opcionalmente, imprimir las asignaciones para verificación
+        for allocation in self.asset_allocations:
+            print(f"{allocation['ticker']}: ${allocation['allocation']:.2f}")
+    
 
-        # Optimización para el máximo ratio de Sharpe usando SLSQP
-        optimized_weights_sharpe = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='sharpe')
-        print_optimized_weights(tickers, optimized_weights_sharpe, "Maximum Sharpe Ratio (SLSQP)")
 
-        # Optimización para la mínima varianza usando SLSQP
-        optimized_weights_variance = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='variance')
-        print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (SLSQP)")
+    
 
-        # Optimización para el máximo ratio Omega usando SLSQP
-        optimized_weights_omega = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='omega')
-        print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (SLSQP)")
 
-        # Nota: Asegúrate de tener implementaciones completas para monte_carlo_optimization y gradient_descent_optimization
+if __name__ == "__main__":
+    # Definir los tickers y parámetros iniciales
+    tickers = ['ABBV', 'MET', 'OXY', 'PERI']
+    date_start = "2020-01-01"
+    date_end = "2023-01-01"
+    # Bounds (restricciones)
+    lower_bounds = 0.1 
+    upper_bounds = 1.0
+    risk_free_rate = 0.055 / 252  # Tasa libre de riesgo ajustada diariamente
+    optimizer = QAA(tickers, date_start, date_end, risk_free_rate=risk_free_rate, bounds=[(lower_bounds, upper_bounds) for _ in tickers])
+
+    # Función para imprimir los resultados
+    def print_optimized_weights(tickers, weights, optimization_type):
+        print(f"Optimized Weights for {optimization_type}:")
+        for ticker, weight in zip(tickers, weights):
+            print(f"{ticker}: {weight*100:.2f}%")
+        print("\n")  # Agrega una línea en blanco para separar los resultados
+
+    def allocate_cash_to_assets(self, weights):
+        """
+        Allocates initial cash to assets based on optimized weights and saves the allocations.
+        
+        Parameters
+        - weights: np.array
+            the optimized asset weights for the portafolio 
+
+        Returns
+        -------
+        ndarray
+            Weights for the portfolio in cash.
+        """
+
+        # Calcular los montos de inversión para cada activo
+        investment_amounts = self.initial_cash * weights
+        
+        # Guardar las asignaciones en una estructura
+        self.asset_allocations = [{'ticker': ticker, 'allocation': amount} for ticker, amount in zip(self.tickers, investment_amounts)]
+        
+        # print (at least for this moment)
+        for allocation in self.asset_allocations:
+            print(f"{allocation['ticker']}: ${allocation['allocation']:.2f}")
+
+
+    # Optimización para el máximo ratio de Sharpe usando SLSQP
+    optimized_weights_sharpe = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='sharpe')
+    optimizer.allocate_cash_to_assets(optimized_weights_sharpe)
+    print_optimized_weights(tickers, optimized_weights_sharpe, "Maximum Sharpe Ratio (SLSQP)")
+
+    # Optimización para la mínima varianza usando SLSQP
+    optimized_weights_variance = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='variance')
+    optimizer.allocate_cash_to_assets(optimized_weights_variance)
+    print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (SLSQP)")
+
+    # Optimización para el máximo ratio Omega usando SLSQP
+    optimized_weights_omega = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='omega')
+    optimizer.allocate_cash_to_assets(optimized_weights_omega)
+    print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (SLSQP)")
+
+    # Nota: Asegúrate de tener implementaciones completas para monte_carlo_optimization y gradient_descent_optimization
