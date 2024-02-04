@@ -249,3 +249,31 @@ class QAA:
         )
         return result.x
     
+
+
+    if __name__ == "__main__":
+    # Definir los tickers y parámetros iniciales
+    tickers = ['ABBV', 'MET', 'OXY', 'PERI']
+    risk_free_rate = 0.055 / 252  # Tasa libre de riesgo ajustada diariamente
+    optimizer = PortfolioOptimizer(tickers, risk_free_rate=risk_free_rate, bounds=[(0.1, 1.0) for _ in tickers])
+
+    # Función para imprimir los resultados
+    def print_optimized_weights(tickers, weights, optimization_type):
+        print(f"Optimized Weights for {optimization_type}:")
+        for ticker, weight in zip(tickers, weights):
+            print(f"{ticker}: {weight*100:.2f}%")
+        print("\n")  # Agrega una línea en blanco para separar los resultados
+
+    # Optimización para el máximo ratio de Sharpe usando SLSQP
+    optimized_weights_sharpe = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='sharpe')
+    print_optimized_weights(tickers, optimized_weights_sharpe, "Maximum Sharpe Ratio (SLSQP)")
+
+    # Optimización para la mínima varianza usando SLSQP
+    optimized_weights_variance = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='variance')
+    print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (SLSQP)")
+
+    # Optimización para el máximo ratio Omega usando SLSQP
+    optimized_weights_omega = optimizer.optimize_portfolio(optimization_method='SLSQP', optimization_type='omega')
+    print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (SLSQP)")
+
+    # Nota: Asegúrate de tener implementaciones completas para monte_carlo_optimization y gradient_descent_optimization
