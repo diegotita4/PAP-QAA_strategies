@@ -195,7 +195,7 @@ class QAA:
                 # Actualizar pesos basados en el gradiente
                 weights -= learning_rate * gradient
                 # Mantener los pesos dentro de los límites
-                weights = np.clip(weights, 0.1, 1)
+                weights = np.clip(weights, 0, 1)
                 # Normalizar los pesos para que sumen 1
                 weights /= np.sum(weights)
             return weights    
@@ -303,8 +303,8 @@ if __name__ == "__main__":
     date_start = "2020-01-01"
     date_end = "2023-01-01"
     # Bounds (restricciones)
-    lower_bounds = 0.1 
-    upper_bounds = 1.0
+    lower_bounds = 0.1  # Minimo en cada activo cubra un 10% de participacion en el peso
+    upper_bounds = 1.0  
     risk_free_rate = 0.055 / 252  # Tasa libre de riesgo ajustada diariamente
     optimizer = QAA(tickers, date_start, date_end, risk_free_rate=risk_free_rate, bounds=[(lower_bounds, upper_bounds) for _ in tickers])
 
