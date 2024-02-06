@@ -9,6 +9,12 @@
 # -- --------------------------------------------------------------------------------------------------- -- #
 """
 
+#Librerias 
+import numpy as np
+from scipy.optimize import minimize, BFGS
+import numpy as np
+import pandas as pd
+import yfinance as yf
 
 class QAA:
     def __init__(self, tickers, start, end, risk_free_rate=0.0, bounds=None, initial_cash=1000000):
@@ -349,4 +355,32 @@ if __name__ == "__main__":
     optimizer.allocate_cash_to_assets(optimized_weights_omega)
     print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (SLSQP)")
 
-    # Nota: Asegúrate de tener implementaciones completas para monte_carlo_optimization y gradient_descent_optimization
+     # Optimización para el máximo ratio de Sharpe usando MonteCarlo
+    optimized_weights_sharpe = optimizer.optimize_portfolio(optimization_method='MonteCarlo', optimization_type='sharpe')
+    optimizer.allocate_cash_to_assets(optimized_weights_sharpe)
+    print_optimized_weights(tickers, optimized_weights_sharpe, "Maximum Sharpe Ratio (MonteCarlo)")
+
+    # Optimización para la mínima varianza usando MonteCarlo
+    optimized_weights_variance = optimizer.optimize_portfolio(optimization_method='MonteCarlo', optimization_type='variance')
+    optimizer.allocate_cash_to_assets(optimized_weights_variance)
+    print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (MonteCarlo)")
+
+    # Optimización para el máximo ratio Omega usando MonteCarlo
+    optimized_weights_omega = optimizer.optimize_portfolio(optimization_method='MonteCarlo', optimization_type='omega')
+    optimizer.allocate_cash_to_assets(optimized_weights_omega)
+    print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (MonteCarlo)")
+
+      # Optimización para el máximo ratio de Sharpe usando SLSQP
+    optimized_weights_sharpe = optimizer.optimize_portfolio(optimization_method='GradientDescent', optimization_type='sharpe')
+    optimizer.allocate_cash_to_assets(optimized_weights_sharpe)
+    print_optimized_weights(tickers, optimized_weights_sharpe, "Maximum Sharpe Ratio (GradientDescent)")
+
+    # Optimización para la mínima varianza usando SLSQP
+    optimized_weights_variance = optimizer.optimize_portfolio(optimization_method='GradientDescent', optimization_type='variance')
+    optimizer.allocate_cash_to_assets(optimized_weights_variance)
+    print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (GradientDescent)")
+
+    # Optimización para el máximo ratio Omega usando SLSQP
+    optimized_weights_omega = optimizer.optimize_portfolio(optimization_method='GradientDescent', optimization_type='omega')
+    optimizer.allocate_cash_to_assets(optimized_weights_omega)
+    print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (GradientDescent)")
