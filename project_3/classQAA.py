@@ -88,8 +88,30 @@ class QAA:
 
         port_return = np.dot(weights, self.returns.mean()) * 252
         port_volatility = np.sqrt(np.dot(weights.T, np.dot(self.cov_matrix, weights))) * np.sqrt(252)
+        return port_return, port_volatility
+
+
+
+    def calculate_sharpe_ratio(self, port_return, port_volatility):
+        """
+        Calcula la ratio de Sharpe para el portafolio dado.
+
+        Parameters
+        ----------
+        port_return : float
+            Retorno esperado anualizado del portafolio.
+        port_volatility : float
+            Volatilidad anualizada del portafolio.
+
+        Returns
+        -------
+        float
+            La ratio de Sharpe del portafolio.
+        """
         sharpe_ratio = (port_return - self.rf) / port_volatility
-        return port_return, port_volatility, sharpe_ratio
+        return sharpe_ratio
+
+
 
 
     def _calculate_omega_ratio(self, weights, threshold_return=0.0):
