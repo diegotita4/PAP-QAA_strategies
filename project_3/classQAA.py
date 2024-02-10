@@ -111,6 +111,11 @@ class QAA:
         sharpe_ratio = (port_return - self.rf) / port_volatility
         return sharpe_ratio
 
+    def negative_sharpe_ratio(weights, returns, cov_matrix, rf):
+        port_return = np.dot(weights, returns.mean()) * 252
+        port_volatility = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))) * np.sqrt(252)
+        sharpe_ratio = (port_return - rf) / port_volatility
+        return -sharpe_ratio  # Negativo para minimización (Maximizamos sharpe sacando el negativo del minimo) #Revisar esta logica.....
 
 
 
