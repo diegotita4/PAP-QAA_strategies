@@ -94,28 +94,32 @@ class QAA:
 
     def _calculate_omega_ratio(self, weights, threshold_return=0.0):
         """
-        Calculates the Omega Ratio for a given portfolio.
+        Calcula la ratio de Omega para un portafolio dado.
 
         Parameters
         ----------
         weights : ndarray
-            Asset weights in the portfolio.
-        threshold_return : float, optional
-            The threshold return for calculating the Omega Ratio, default is 0.0.
+            Pesos de los activos en el portafolio.
+        threshold_return : float, opcional
+            El retorno umbral para calcular la ratio de Omega, por defecto es 0.0.
 
         Returns
         -------
         float
-            The Omega Ratio of the portfolio.
+            La ratio de Omega del portafolio.
         """
+        portfolio_returns = np.dot(self.returns, weights)
+        gains_above_threshold = portfolio_returns[portfolio_returns > threshold_return] - threshold_return
+        losses_below_threshold = threshold_return - portfolio_returns[portfolio_returns <= threshold_return]
+        
+        if losses_below_threshold.sum() == 0:
+            return float('inf')  # Retornar infinito si no hay pérdidas, indicando una ratio de Omega muy favorable
+        
+        omega_ratio = gains_above_threshold.sum() / losses_below_threshold.sum() if losses_below_threshold.sum() != 0 else np.nan
+        
+        # Minimizar la inversa de la ratio de Omega para la optimización
+        return -omega_ratio
 
-        port_return, port_volatility, _ = self._calculate_portfolio_metrics(weights)
-        excess_return = port_return - threshold_return
-        if excess_return > 0:
-            omega_ratio = excess_return / port_volatility
-        else:
-            omega_ratio = -port_volatility
-        return omega_ratio
 
 
     def monte_carlo_optimization(self, num_portfolios=10000, optimization_type='sharpe', threshold_return=0.0):
