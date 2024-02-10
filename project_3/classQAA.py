@@ -141,7 +141,7 @@ class QAA:
         
         omega_ratio = gains_above_threshold.sum() / losses_below_threshold.sum() if losses_below_threshold.sum() != 0 else np.nan
         
-        # Minimizar la inversa de la ratio de Omega para la optimización
+        # Regresa la metrica omega en base a los modelos de optimizacion vistos en el código
         return omega_ratio
 
     # Nuevo método para maximizar la ratio de Sharpe
@@ -406,7 +406,7 @@ print_optimized_weights(tickers, optimized_weights_variance, "Minimum Variance (
 # Optimización para el máximo ratio Omega usando SLSQP
 optimized_weights_omega = optimizer.optimize_portfolio(optimization_goal='omega_ratio', optimization_method='SLSQP')
 optimizer.allocate_cash_to_assets(optimized_weights_omega)
-print_optimized_weights(tickers, optimized_weights_omega, "Maximum Omega Ratio (SLSQP)")
+print_optimized_weights(tickers, optimized_weights_omega, "Omega Ratio (SLSQP)")
 
 # Optimización para el máximo ratio de Sharpe usando MonteCarlo
 optimized_weights_sharpe_mc = optimizer.optimize_portfolio(optimization_goal='sharpe', optimization_method='MonteCarlo')
@@ -421,7 +421,7 @@ print_optimized_weights(tickers, optimized_weights_variance_mc, "Minimum Varianc
 # Optimización para el máximo ratio Omega usando MonteCarlo
 optimized_weights_omega_mc = optimizer.optimize_portfolio(optimization_goal='omega_ratio', optimization_method='MonteCarlo')
 optimizer.allocate_cash_to_assets(optimized_weights_omega_mc)
-print_optimized_weights(tickers, optimized_weights_omega_mc, "Maximum Omega Ratio (MonteCarlo)")
+print_optimized_weights(tickers, optimized_weights_omega_mc, "Omega Ratio (MonteCarlo)")
 
 # Optimización para el máximo ratio de Sharpe usando GradientDescent
 optimized_weights_sharpe_gd = optimizer.optimize_portfolio(optimization_goal='sharpe', optimization_method='GradientDescent')
@@ -436,5 +436,5 @@ print_optimized_weights(tickers, optimized_weights_variance_gd, "Minimum Varianc
 # Optimización para el máximo ratio Omega usando GradientDescent
 optimized_weights_omega_gd = optimizer.optimize_portfolio(optimization_goal='omega_ratio', optimization_method='GradientDescent')
 optimizer.allocate_cash_to_assets(optimized_weights_omega_gd)
-print_optimized_weights(tickers, optimized_weights_omega_gd, "Maximum Omega Ratio (GradientDescent)")
+print_optimized_weights(tickers, optimized_weights_omega_gd, "Omega Ratio (GradientDescent)")
 
