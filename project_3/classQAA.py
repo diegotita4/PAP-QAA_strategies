@@ -21,7 +21,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 class QAA:
-    def __init__(self, tickers, start, end, risk_free_rate=0.0, bounds=None, initial_cash=1000000):
+    def __init__(self, tickers, start, end, benchmark='SPY', risk_free_rate=0.0, bounds=None, initial_cash=1000000):
         """
         Initializes the Portfolio Optimizer object with given parameters.
 
@@ -143,6 +143,28 @@ class QAA:
         
         # Regresa la metrica omega en base a los modelos de optimizacion vistos en el código
         return omega_ratio
+    
+
+    # Metodo de semivarianza , parte 1 calcular el downside
+    def calculate_downside_risks(self):
+        benchmark_data = yf.download(self.benchmark, start=self.start, end=self.end)['Adj Close']
+        benchmark_returns = benchmark_data.pct_change().dropna()
+        diff = self.returns.subtract(benchmark_returns, axis=0)
+        diff_neg = diff.copy()
+        diff_neg[diff_neg > 0] = 0
+        downside_r = diff_neg.std()
+        return downside_r
+    
+    # Matiz de semivarianza
+    def semi_variance_matrix(self):
+        downside_r_df = self.downside_r.to_frame()
+        downside_r_transposed = downside_r_df.T
+        mmult = np.dot(downside_r_df, downside_r_transposed)
+        mmult_df = pd.DataFrame(mmult, self.tickers, self.tickers)
+        correlacion = self.returns.corr()
+        semi_var = (mmult_df * correlacion) * 100
+        return semi_var
+    
 
     # Nuevo método para maximizar la ratio de Sharpe
     def max_sharpe(self, optimization_method='SLSQP'):
@@ -303,6 +325,9 @@ class QAA:
             objective = lambda x: self._calculate_portfolio_metrics(x)[1]
         elif optimization_goal == 'omega_ratio':
             objective = lambda x: -self._calculate_omega_ratio(x, threshold_return)
+        elif optimization_goal == 'semi_variance':
+            # objective = lambda x: self.calulate_semi_varinace
+            pass
         else:
             raise ValueError(f"Optimization goal '{optimization_goal}' not supported.")
 
