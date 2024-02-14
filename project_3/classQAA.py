@@ -185,6 +185,12 @@ class QAA:
         # Puedes añadir más métodos de optimización aquí
         else:
             raise ValueError("Unsupported optimization method")
+        
+    def calculate_sortino_ratio(self, weights):
+        port_return = np.dot(weights, self.returns.mean()) * 252
+        downside_risk = self.returns[self.returns<0].std()*np.sqrt(252)
+        sortino_ratio = (port_return - self.rf) / downside_risk
+        return sortino_ratio
 
     def monte_carlo_optimization(self, optimization_goal='sharpe', num_portfolios=10000):
         """
@@ -325,6 +331,7 @@ class QAA:
             objective = lambda x: self._calculate_portfolio_metrics(x)[1]
         elif optimization_goal == 'omega_ratio':
             objective = lambda x: -self._calculate_omega_ratio(x, threshold_return)
+        #elif optimization_goal == 'sortino':
         elif optimization_goal == 'semi_variance':
             # objective = lambda x: self.calulate_semi_varinace
             pass
@@ -463,3 +470,17 @@ optimized_weights_omega_gd = optimizer.optimize_portfolio(optimization_goal='ome
 optimizer.allocate_cash_to_assets(optimized_weights_omega_gd)
 print_optimized_weights(tickers, optimized_weights_omega_gd, "Omega Ratio (GradientDescent)")
 
+# Optimización para el máximo ratio Sortino usando SLSQP
+#optimized_weights_sortino = optimizer.optimize_portfolio(optimization_goal='sortino', optimization_method='SLSQP')
+#optimizer.allocate_cash_to_assets(optimized_weights_sortino)
+#print_optimized_weights(tickers, optimized_weights_sortino, "Sortino Ratio (SLSQP)")
+
+# Optimización para el máximo ratio Sortino usando GradientDescent
+#optimized_weights_sortino_gd = optimizer.optimize_portfolio(optimization_goal='sortino', optimization_method='GradientDescent')
+#optimizer.allocate_cash_to_assets(optimized_weights_sortino_gd)
+#print_optimized_weights(tickers, optimized_weights_sortino_gd, "Sortino Ratio (GradientDescent)")
+
+# Optimización para el máximo ratio de Sortino usando MonteCarlo
+#optimized_weights_sortino_mc = optimizer.optimize_portfolio(optimization_goal='sortino', optimization_method='MonteCarlo')
+#optimizer.allocate_cash_to_assets(optimized_weights_sortino_mc)
+#print_optimized_weights(tickers, optimized_weights_sortino_mc, "Maximum Sortino Ratio (MonteCarlo)")
