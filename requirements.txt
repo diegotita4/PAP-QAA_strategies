@@ -1,26 +1,30 @@
 
+"""
 # -- --------------------------------------------------------------------------------------------------- -- #
-# -- project: Backtesting de Estrategias de Asset Allocation PAP 4J05A                                   -- #
-# -- script: requirements.txt : text file with the required libraries for the project                    -- #
-# -- authors: J3SVS, diegotita4, JoAlfonso, Antonio-IF, Oscar148                                         -- #
-# -- license: GPL-3.0 License                                                                            -- #
-# -- repository: https://github.com/diegotita4/PAP.git                                                   -- #
+# -- project: Quantitative Analysis and Allocation (QAA)                                                 -- #
+# -- script: requirements.txt - Text file with the required libraries for the project                    -- #
+# -- authors: diegotita4 - Antonio-IF - JoAlfonso - J3SVS - Oscar148                                     -- #
+# -- license: GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007                                       -- #
+# -- repository: https://github.com/diegotita4/PAP                                                       -- #
 # -- --------------------------------------------------------------------------------------------------- -- #
+"""
 
-# En la terminal utilizar los siguientes pasos (Todos los IDE)
-#CAMINO 1
-# 1. pip freeze > requirements.txt
-# 2. pip install -r requirements.txt
+"""
+PATH 1: Terminal:
 
-#CAMINO 2 (Visual Studio)
-# 1. Generar el ambiente mediante python -m venv env
-# 2. Seleccionarlo en VSCode en View->Command Palette->Python: Select Interpreter
-# 3. Activarlo en View->Command Palette->Terminal:Create New Integrated Terminal
-# 4. Instalar las librerías desde el archivo utilizando python -m pip install -r requirements.txt
+1-. Run the command pip freeze > requirements.txt.
+2-. Install the dependencies using pip install -r requirements.txt.
 
-numpy >= 1.26.3
+PATH 2: Visual Studio:
+
+1-. Create a virtual environment using python -m venv venv.
+2-. Select it in VSCode by going to View -> Command Palette -> Python: Select Interpreter.
+3-. Activate it in View -> Command Palette -> Terminal: Create New Integrated Terminal.
+4-. Install the libraries from the file using python -m pip install -r requirements.txt.
+"""
+
+numpy >= 1.24.3
 yfinance >= 0.2.36
-scipy >= 1.12.0
-pandas >= 2.2.0
-streamlit >= 1.31.0
-# python >= 3.9
+scipy >= 1.11.1
+pandas >= 2.0.3
+matplotlib >= 3.7.2
