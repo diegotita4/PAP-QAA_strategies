@@ -93,7 +93,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO"]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO"]:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -244,6 +244,9 @@ class QAA:
         
         elif self.QAA_strategy == 'MAX SHARPE RATIO':
             return self.max_sharpe_ratio(returns)
+        
+        elif self.QAA_strategy == 'OMEGA RATIO':
+            return self.max_omega_ratio(returns)
         
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -451,20 +454,82 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
+        # 3RD QAA STRATEGY: "OMEGA RATIO"
+    def max_omega_ratio(self, returns):
+        """
+        Calculates the portfolio with the maximum Omega Ratio using the specified optimization model.
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
+
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
+        returns = returns.drop(columns=[self.benchmark])
+        threshold_return = self.rf / self.DAYS_IN_YEAR  # Adjusted for daily returns if necessary
+
+        # Define the objective function for Omega Ratio
+        def objective_function(weights):
+            portfolio_returns = np.dot(returns, weights)
+            excess_returns = portfolio_returns - threshold_return
+
+            upside_potential = np.sum(excess_returns[excess_returns > 0]) / len(excess_returns)
+            downside_risk = -np.sum(excess_returns[excess_returns < 0]) / len(excess_returns) if np.sum(excess_returns < 0) != 0 else 1
+
+            omega_ratio = upside_potential / downside_risk
+            return -omega_ratio  # Negating the ratio for minimization
+
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, returns)
+            optimization_model = "SLSQP"
+
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
+            optimization_model = "MONTECARLO"
+
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, self.LEARNING_RATE)
+            optimization_model = "GRADIENT DESCENT"
+
+        else:
+            raise ValueError(f"Invalid optimization method: {self.optimization_model}")
+
+        self.optimal_weights = result['x']
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name='Optimal Weights')
+
+        print(f"\nOptimal Portfolio Weights for MAX OMEGA RATIO QAA using {optimization_model} optimization:")
+        print(weights_series)
+
+        return weights_series
+
+# ----------------------------------------------------------------------------------------------------
+    
+
+
+
+# ----------------------------------------------------------------------------------------------------
+    
+
+
+
+
 # EXAMPLE
 qaa_instance = QAA(
     tickers=['ABBV', 'MET', 'OXY', 'PERI'],
     benchmark='SPY',
-    rf=0.02,
+    rf=0.50, #modifique rf para hacer pruebas
     lower_bound=0.1,
     higher_bound=0.9,
-    start_date='2022-01-01',
-    end_date='2022-12-31',
+    start_date='2020-01-02',
+    end_date='2023-01-23',
     optimization_model='SLSQP',
     #optimization_model='MONTECARLO',
     #optimization_model='GRADIENT DESCENT',
-    #QAA_strategy='MIN VARIANCE'
-    QAA_strategy='MAX SHARPE RATIO'
+    #optimization_model='SLSQP',
+    #QAA_strategy='MIN VARIANCE',
+    #QAA_strategy='MAX SHARPE RATIO',
+    #QAA_strategy='OMEGA RATIO'
+    QAA_strategy='OMEGA RATIO'
 )
 
 try:
