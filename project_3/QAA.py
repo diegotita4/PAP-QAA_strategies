@@ -93,7 +93,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO"]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO", 'MAX SORTINO RATIO']:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -247,6 +247,9 @@ class QAA:
         
         elif self.QAA_strategy == 'OMEGA RATIO':
             return self.max_omega_ratio(returns)
+        
+        elif self.QAA_strategy == 'MAX SORTINO RATIO':
+            return self.max_sortino_ratio(returns)
         
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -501,6 +504,57 @@ class QAA:
         print(weights_series)
 
         return weights_series
+    
+
+# ----------------------------------------------------------------------------------------------------
+
+        # 4TH QAA STRATEGY: "MAX SORTINO RATIO"
+    def max_sortino_ratio(self, returns):
+        """
+        Calculates the portfolio with the maximum Sortino Ratio using the specified optimization model.
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
+
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
+
+        returns = returns.drop(columns=[self.benchmark])
+
+        downside_returns = np.minimum(returns, 0)
+
+        target_return = self.rf  
+        
+        objective_function = lambda w: -((np.dot(returns.mean(), w) - target_return) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))))
+
+        downside_deviation = lambda w: np.sqrt(np.dot(w.T, np.dot(downside_returns.cov(), w)))
+
+        gradient_function = lambda w: -((returns.mean() - target_return) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w)))) * (returns.cov() @ w) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))) - (downside_returns.cov() @ w) / downside_deviation(w)
+
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, returns)
+            optimization_model = "SLSQP"
+
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
+            optimization_model = "MONTECARLO"
+    
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
+            optimization_model = "GRADIENT DESCENT"
+    
+        else:
+            raise ValueError(f"Invalid optimization method: {self.optimization_model}")
+    
+        self.optimal_weights = result['x']
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name='Optimal Weights')
+    
+        print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+        print(weights_series)
+    
+        return weights_series
+    
 
 # ----------------------------------------------------------------------------------------------------
     
@@ -528,8 +582,8 @@ qaa_instance = QAA(
     #optimization_model='SLSQP',
     #QAA_strategy='MIN VARIANCE',
     #QAA_strategy='MAX SHARPE RATIO',
-    #QAA_strategy='OMEGA RATIO'
-    QAA_strategy='OMEGA RATIO'
+    #QAA_strategy='OMEGA RATIO',
+    #QAA_strategy='MAX SORTINO RATIO'
 )
 
 try:
