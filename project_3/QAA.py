@@ -457,7 +457,8 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-        # 3RD QAA STRATEGY: "OMEGA RATIO"
+    
+    # 3ND QAA STRATEGY: "OMEGA RATIO"
     def max_omega_ratio(self, returns):
         """
         Calculates the portfolio with the maximum Omega Ratio using the specified optimization model.
@@ -469,9 +470,8 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
         returns = returns.drop(columns=[self.benchmark])
-        threshold_return = self.rf / self.DAYS_IN_YEAR  # Adjusted for daily returns if necessary
+        threshold_return = self.rf / self.DAYS_IN_YEAR 
 
-        # Define the objective function for Omega Ratio
         def objective_function(weights):
             portfolio_returns = np.dot(returns, weights)
             excess_returns = portfolio_returns - threshold_return
@@ -482,6 +482,16 @@ class QAA:
             omega_ratio = upside_potential / downside_risk
             return -omega_ratio  # Negating the ratio for minimization
 
+        
+        def gradient_function(weights):
+            eps = 1e-8  
+            grad = np.zeros(len(weights))
+            for i in range(len(weights)):
+                weights_p = np.array(weights)
+                weights_p[i] += eps
+                grad[i] = (objective_function(weights_p) - objective_function(weights)) / eps
+            return grad
+
         if self.optimization_model == "SLSQP":
             result = self.SLSQP(objective_function, returns)
             optimization_model = "SLSQP"
@@ -491,7 +501,7 @@ class QAA:
             optimization_model = "MONTECARLO"
 
         elif self.optimization_model == "GRADIENT DESCENT":
-            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, self.LEARNING_RATE)
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
             optimization_model = "GRADIENT DESCENT"
 
         else:
@@ -504,7 +514,6 @@ class QAA:
         print(weights_series)
 
         return weights_series
-    
 
 # ----------------------------------------------------------------------------------------------------
 
