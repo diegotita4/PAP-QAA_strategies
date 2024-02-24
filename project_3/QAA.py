@@ -93,7 +93,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO", 'MAX SORTINO RATIO', "BLACK-LITTERMAN"]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO", 'MAX SORTINO RATIO', "BLACK-LITTERMAN",'SEMI VARIANCE']:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -256,7 +256,7 @@ class QAA:
             return self.black_litterman(returns, cov, rf, expected_returns, opiniones, tau)
         
         elif self.QAA_strategy == 'SEMI VARIANCE':
-            return self.semi_variance(returns)
+            return self.semi_var(returns)
         
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
