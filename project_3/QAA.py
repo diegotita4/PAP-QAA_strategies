@@ -252,9 +252,11 @@ class QAA:
         elif self.QAA_strategy == 'MAX SORTINO RATIO':
             return self.max_sortino_ratio(returns)
 
-
         elif self.QAA_strategy == 'BLACK-LITTERMAN':
             return self.black_litterman(returns, cov, rf, expected_returns, opiniones, tau)
+        
+        elif self.QAA_strategy == 'SEMI VARIANCE':
+            return self.semi_variance(returns)
         
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -651,6 +653,80 @@ class QAA:
         return weights_series
 
 # ----------------------------------------------------------------------------------------------------
+
+        # 6TH QAA STRATEGY: "SEMI VAR"
+    def semi_var(self, returns):
+
+        """
+        Calculates optimal portfolio weights using the Semi Variance strategy.
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
+        - benchmark (str): Ticker symbol of the benchmark asset.
+
+        Returns:
+        - optimal_weights_series (pd.Series): Optimal weights of the portfolio.
+        """ 
+        benchmark_data = yf.download(self.benchmark, start=self.start_date, end=self.end_date)['Adj Close']
+        benchmark_returns = benchmark_data.pct_change().dropna()
+
+        # Asegurarse de que los retornos no contienen el benchmark
+        if self.benchmark in returns.columns:
+            returns = returns.drop(columns=[self.benchmark])  # Eliminar el benchmark de los retornos de los activos
+        
+        # Cálculo de diferencia entre los retornos de los activos y el retorno del benchmark
+        diff = returns.subtract(benchmark_returns, axis=0)
+        diff_neg = diff.copy()
+        diff_neg[diff_neg > 0] = 0
+
+
+        def gradient_function(weights):
+            semi_cov_matrix = diff_neg.cov()  # Matriz de covarianza de los retornos negativos
+            
+            # El gradiente de la semi-varianza respecto a los pesos podría aproximarse como:
+            gradient = -1/2 * np.dot(semi_cov_matrix, weights) / np.sqrt(np.dot(weights.T, np.dot(semi_cov_matrix, weights)))
+            
+            return gradient
+
+
+        def semi_variance(weights):
+            portfolio_returns = np.dot(weights, returns.mean()) 
+            semi_var = np.sqrt(np.dot(weights.T, np.dot(diff_neg.cov(), weights)))  
+            return semi_var  
+        
+        def objective_function(weights):
+            return semi_variance(weights)  
+        
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, returns)
+            optimization_model = "SLSQP"
+
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
+            optimization_model = "MONTECARLO"
+
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
+            optimization_model = "GRADIENT DESCENT"
+
+        else:
+            raise ValueError(f"Optimization model '{self.optimization_model}' not supported.")
+
+
+        self.optimal_weights = result['x']
+
+        weights_series = pd.Series(self.optimal_weights, index=returns.columns, name='Optimal Weights')
+
+        print(f"\nOptimal Portfolio Weights for SEMI VAR strategy using {optimization_model} optimization:")
+        print(weights_series)
+
+        return weights_series
+    
+        
+
+
+
+# ----------------------------------------------------------------------------------------------------
     
 
 
@@ -674,6 +750,7 @@ qaa_instance = QAA(
     #QAA_strategy='OMEGA RATIO',
     #QAA_strategy='MAX SORTINO RATIO'
     #QAA_strategy='BLACK-LITTERMAN'
+    #QAA_strategy='SEMI VARIANCE'
 )
 
 try:
