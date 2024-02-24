@@ -1,7 +1,7 @@
 
 """
 # -- --------------------------------------------------------------------------------------------------- -- #
-# -- project: Quantitative Analysis and Allocation (QAA)                                                 -- #
+# -- project: Quantitative Asset Allocation (QAA)                                                 -- #
 # -- script: main.py - Python script with the main functionality                                         -- #
 # -- authors: diegotita4 - Antonio-IF - JoAlfonso - J3SVS - Oscar148                                     -- #
 # -- license: GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007                                       -- #
@@ -24,7 +24,7 @@ from scipy.optimize import minimize
 # CLASS DEFINITION
 class QAA:
     """
-    Class QAA: Quantitative Analysis and Allocation.
+    Class QAA: Quantitative Asset Allocation.
 
     This class provides functionalities for conducting quantitative analysis and asset allocation.
 
@@ -93,7 +93,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO", 'MAX SORTINO RATIO']:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA RATIO", 'MAX SORTINO RATIO', "BLACK-LITTERMAN"]:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -228,7 +228,8 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # STRATEGY SELECTION
-    def QAA_strategy_selection(self, returns):
+    def QAA_strategy_selection(self, returns, cov, rf, expected_returns=np.array([0]),
+                               opiniones=np.array([1]), tau=0.025):
         """
         Executes the selected QAA strategy based on the configuration in QAA_instance.
 
@@ -250,6 +251,10 @@ class QAA:
         
         elif self.QAA_strategy == 'MAX SORTINO RATIO':
             return self.max_sortino_ratio(returns)
+
+
+        elif self.QAA_strategy == 'BLACK-LITTERMAN':
+            return self.black_litterman(returns, cov, rf, expected_returns, opiniones, tau)
         
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -566,9 +571,84 @@ class QAA:
     
 
 # ----------------------------------------------------------------------------------------------------
-    
 
+        # 5TH QAA STRATEGY: "Black-Litterman"
+    def black_litterman(self, returns, cov, rf, expected_returns, opiniones, tau=0.025):
+        """
+                Calcula Black-Litterman para un portafolio dado.
 
+                Parameters
+                ----------
+                expected_returns : numpy array
+                    Rendimientos que el inversionista considera que tendrá el activo, (subjetivos).
+                opiniones : numpy array
+                    Cuánto esperas que supere cada activo a los demás, por cada elemento
+                    en expected_returns debe de haber una fila, y una columna por cada activo.
+                cov : ndarray
+                    Matriz de covarianza de los activos.
+                risk_free_r : float
+                    Tasa libre de riesgo acorde a los periodos del portafolio
+                tau : float
+                    Nivel de confianza en los expected_returns, 0.025 por defecto, un
+                    valor más alto de τ implica una mayor confianza en las expectativas
+                    del inversionista, mientras que un valor más bajo de τ da más peso
+                    a las expectativas del mercado.
+
+                Returns
+                -------
+                list
+                    Vector con los pesos de los activos.
+                """
+        # Estimaciones subjetivas
+        E_r = expected_returns  # Expectativas de rendimiento del inversionista, solo 1 por activo (se pueden poner menos, pero "opiniones_p" debe de coincidir en tamaño)
+        opiniones_p = opiniones  # 1 por cada rendimiento en E_r, y 1 fila por cada opinion
+        Omega = np.diag(np.power(E_r, 2))
+
+        # Datos de entrada
+        returns = returns.drop(columns=[self.benchmark])  # Media de los rendimientos
+        cov = cov.drop(columns=[self.benchmark]).drop(self.benchmark)  # Matriz de covarianza de los rendimientos
+        rf = rf  # tasa libre de riesgo
+        tau = tau
+
+        # Calculo de los parametros del modelo Black-Litterman
+        posterior_mu = (returns.mean() + tau * cov.dot(opiniones_p.T).dot(
+            np.linalg.inv(opiniones_p.dot(tau ** 2 * cov).dot(opiniones_p.T) + Omega))
+                        .dot(E_r - opiniones_p.dot(returns.mean())))
+
+        posterior_cov = (cov + tau * cov - tau ** 2 * cov).dot(opiniones_p.T).dot(
+            np.linalg.inv(opiniones_p.dot(tau ** 2 * cov).dot(opiniones_p.T) + Omega)).dot(
+            opiniones_p.dot(tau ** 2 * cov))
+
+        volatility = np.sqrt(np.diagonal(posterior_cov))
+
+        objective_function = lambda weight: -posterior_mu.dot(weight) + 0.5 * tau * weight.dot(posterior_cov).dot(
+            weight)
+
+        gradient_function = lambda weight: -(posterior_mu + tau * posterior_cov.dot(weight))
+
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, returns)
+            optimization_model = "SLSQP"
+
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
+            optimization_model = "MONTECARLO"
+
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function,
+                                           self.LEARNING_RATE)
+            optimization_model = "GRADIENT DESCENT"
+
+        else:
+            raise ValueError(f"Invalid optimization method: {self.optimization_model}")
+
+        self.optimal_weights = result['x']
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name='Optimal Weights')
+
+        print(f"\nOptimal Portfolio Weights for MAX BlACK-LITTERMAN QAA using {optimization_model} optimization:")
+        print(weights_series)
+
+        return weights_series
 
 # ----------------------------------------------------------------------------------------------------
     
@@ -593,12 +673,17 @@ qaa_instance = QAA(
     #QAA_strategy='MAX SHARPE RATIO',
     #QAA_strategy='OMEGA RATIO',
     #QAA_strategy='MAX SORTINO RATIO'
+    #QAA_strategy='BLACK-LITTERMAN'
 )
 
 try:
     data, returns, std, var, cov, corr = qaa_instance.assets_metrics()
 
-    optimal_weights = qaa_instance.QAA_strategy_selection(returns)
+    optimal_weights = qaa_instance.QAA_strategy_selection(returns=returns, cov=cov, rf=0.02,
+                                                          expected_returns=np.array([.15, .1, .1, .1]),
+                                                          opiniones=np.array(
+                                                              [[1, 0, 0, 0], [0, 1, -3, 0], [0, 0, 1, -1],
+                                                               [0, 0, 0, 0]]))
     
     qaa_instance.portfolio_metrics(returns)
 
