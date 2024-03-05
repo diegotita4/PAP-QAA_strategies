@@ -57,7 +57,7 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # INPUT VARIABLES
-    def __init__(self, tickers=None, benchmark=None, rf=None, lower_bound=None, higher_bound=None, 
+    def __init__(self, tickers=None, benchmark=None, rf=None, MAR=None, lower_bound=None, higher_bound=None, 
                  start_date=None, end_date=None, optimization_model=None, QAA_strategy=None):
         """
         Constructor of the QAA class.
@@ -66,6 +66,7 @@ class QAA:
         - tickers (list): List of asset tickers in the portfolio (cannot be empty).
         - benchmark (str): Ticker of the benchmark for comparisons.
         - rf (float): Risk-free rate.
+        - MAR (float): the Minimum Acceptable Return (MAR) in Roy's Safety-First Ratio strategy.
         - lower_bound (float): Lower limit for asset weights.
         - higher_bound (float): Upper limit for asset weights.
         - start_date (str): Start date in 'YYYY-MM-DD' format.
@@ -100,7 +101,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK-LITTERMAN"]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK-LITTERMAN", "ROY-SAFETYRATIO" ]:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -110,6 +111,7 @@ class QAA:
         self.higher_bound = higher_bound
         self.optimization_model = optimization_model
         self.QAA_strategy = QAA_strategy
+        self.MAR = MAR      
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -260,6 +262,9 @@ class QAA:
 
         elif self.QAA_strategy == "BLACK-LITTERMAN":
             return self.black_litterman(returns, expected_returns, opiniones, tau)
+        
+        elif self.QAA_strategy == "ROY-SAFETYRATIO":
+            return self.roy_safety_first_ratio(returns, self.MAR)
 
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -680,11 +685,69 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
+    # 7TH QAA STRATEGY: "Roy Safety First Ratio"
+    def roy_safety_first_ratio(self, returns, MAR):
+        """
+        Calculates the portfolio with the maximum Roy's Safety-First Ratio using the specified optimization model.
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
+        - MAR (float): Minimum Acceptable Return (target return).
+
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
+        returns = returns.drop(columns=[self.benchmark])
+
+        def objective_function(w):
+            """
+            Objective function for Roy's Safety-First Ratio.
+            """
+            E_rp = np.dot(w, returns.mean())
+            sigma_p = np.sqrt(np.dot(w.T, np.dot(returns.cov(), w)))
+            return -(E_rp - MAR) / sigma_p
+
+        def gradient_function(w):
+            """
+            Gradient of the objective function for Roy's Safety-First Ratio.
+            """
+            mean_returns = returns.mean()
+            cov_matrix = returns.cov()
+            portfolio_return = np.dot(w, mean_returns)
+            portfolio_volatility = np.sqrt(np.dot(w.T, np.dot(cov_matrix, w)))
+
+            grad_expected_return = mean_returns
+            grad_volatility = np.dot(cov_matrix, w) / portfolio_volatility
+
+            gradient = -(grad_expected_return * portfolio_volatility - (portfolio_return - MAR) * grad_volatility) / (portfolio_volatility ** 2)
+            return gradient
+
+        # Use the appropriate optimization model
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, returns)
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(gradient_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
+        else:
+            raise ValueError("Invalid optimization model.")
+
+        self.optimal_weights = result["x"]
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+        print(f"\nOptimal Portfolio Weights for Roy's Safety-First Ratio using {self.optimization_model} optimization:")
+        print(weights_series)
+        return weights_series
+
+
+# ----------------------------------------------------------------------------------------------------
+
 # EXAMPLE
 qaa_instance = QAA(
     tickers=["ABBV", "MET", "OXY", "PERI"],
     benchmark="SPY",
     rf=0.02,
+    MAR=0.20, # Minimum Acceptable Return Safety Ratio
     lower_bound=0.1,
     higher_bound=0.9,
     start_date="2020-01-02",
@@ -693,11 +756,14 @@ qaa_instance = QAA(
     #optimization_model="MONTECARLO",
     #optimization_model="GRADIENT DESCENT",
     #QAA_strategy="MIN VARIANCE",
-    QAA_strategy="MAX SHARPE RATIO",
+    QAA_strategy="ROY-SAFETYRATIO",
+    #QAA_strategy="MAX SHARPE RATIO",
     #QAA_strategy="OMEGA",
-    #QAA_strategy="SEMIVARIANCE"
-    #QAA_strategy="SORTINO RATIO"
-    #QAA_strategy="BLACK-LITTERMAN"
+    #QAA_strategy="SEMIVARIANCE",
+    #QAA_strategy="SORTINO RATIO",
+    #QAA_strategy="BLACK-LITTERMAN",
+    #QAA_strategy="ROY-SAFETYRATIO",
+
 )
 
 try:
