@@ -18,6 +18,8 @@ import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
+from scipy.spatial.distance import squareform 
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -101,7 +103,7 @@ class QAA:
         if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
             raise ValueError("Invalid optimization model.")
 
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK-LITTERMAN", "ROY-SAFETYRATIO" ]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK-LITTERMAN", "ROY-SAFETYRATIO", "HRP"]:
             raise ValueError("Invalid QAA strategy.")
 
         self.tickers = tickers
@@ -265,6 +267,9 @@ class QAA:
         
         elif self.QAA_strategy == "ROY-SAFETYRATIO":
             return self.roy_safety_first_ratio(returns, self.MAR)
+        
+        elif self.QAA_strategy == "HRP":
+            return self.HRP(returns)
 
         else:
             raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized.")
@@ -728,7 +733,7 @@ class QAA:
         elif self.optimization_model == "MONTECARLO":
             result = self.montecarlo(objective_function, returns, self.NUMBER_OF_SIMULATIONS)
         elif self.optimization_model == "GRADIENT DESCENT":
-            result = self.gradient_descent(gradient_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
+            result = self.gradient_descent(objective_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
         else:
             raise ValueError("Invalid optimization model.")
 
@@ -737,6 +742,63 @@ class QAA:
 
         print(f"\nOptimal Portfolio Weights for Roy's Safety-First Ratio using {self.optimization_model} optimization:")
         print(weights_series)
+        return weights_series
+    
+# ----------------------------------------------------------------------------------------------------
+
+# 8TH QAA STRATEGY: "Hierarchical Risk Parity"
+    def HRP(self, returns):
+        """
+        Calculates the portfolio weights using the Hierarchical Risk Parity approach.
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets without the benchmark.
+
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio calculated using HRP.
+        """
+        # Asegurar que el benchmark se excluya de los cálculos
+        if self.benchmark in returns.columns:
+            returns = returns.drop(columns=[self.benchmark])
+    
+        
+        # Paso 1: Convertir la matriz de correlación a una matriz de distancias
+        corr_matrix = returns.corr()
+        distance_matrix = np.sqrt((1 - corr_matrix) / 2)
+
+        # Paso 2: Realizar clustering jerárquico
+        linkage_matrix = linkage(squareform(distance_matrix), method='single')
+
+        # Paso 3: Ordenar los activos basado en el dendrograma
+        sorted_indices = leaves_list(linkage_matrix)
+        sorted_assets = returns.columns[sorted_indices]
+
+        # Calcula la matriz de covarianza para la función objetivo
+        cov_matrix = returns.cov()
+
+        # Definir la función objetivo y la función de gradiente para la optimización
+        objective_function = lambda weights: np.dot(weights.T, np.dot(cov_matrix, weights))
+        gradient_function = lambda weights: 2 * np.dot(cov_matrix, weights)
+
+        # Usar el modelo de optimización apropiado
+        if self.optimization_model == "SLSQP":
+            result = self.SLSQP(objective_function, cov_matrix)
+        elif self.optimization_model == "MONTECARLO":
+            result = self.montecarlo(objective_function, cov_matrix, self.NUMBER_OF_SIMULATIONS)
+        elif self.optimization_model == "GRADIENT DESCENT":
+            result = self.gradient_descent(objective_function, gradient_function, cov_matrix, self.LEARNING_RATE)
+        else:
+            raise ValueError("Invalid optimization model.")
+
+        # Ajustar los pesos óptimos basados en los resultados de la optimización
+        self.optimal_weights = result['x']
+
+        # Crear y retornar la serie de pesos
+        weights_series = pd.Series(self.optimal_weights, index=sorted_assets, name="HRP Weights")
+
+        print("\nOptimal Portfolio Weights using Hierarchical Risk Parity (HRP):")
+        print(weights_series)
+
         return weights_series
 
 
@@ -756,13 +818,14 @@ qaa_instance = QAA(
     #optimization_model="MONTECARLO",
     #optimization_model="GRADIENT DESCENT",
     #QAA_strategy="MIN VARIANCE",
-    QAA_strategy="ROY-SAFETYRATIO",
+    QAA_strategy="HRP",
     #QAA_strategy="MAX SHARPE RATIO",
     #QAA_strategy="OMEGA",
     #QAA_strategy="SEMIVARIANCE",
     #QAA_strategy="SORTINO RATIO",
     #QAA_strategy="BLACK-LITTERMAN",
     #QAA_strategy="ROY-SAFETYRATIO",
+    #QAA_strategy="HRP",
 
 )
 
