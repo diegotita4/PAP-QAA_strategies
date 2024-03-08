@@ -786,7 +786,7 @@ class QAA:
         elif self.optimization_model == "MONTECARLO":
             result = self.montecarlo(objective_function, cov_matrix, self.NUMBER_OF_SIMULATIONS)
         elif self.optimization_model == "GRADIENT DESCENT":
-            result = self.gradient_descent(objective_function, gradient_function, cov_matrix, self.LEARNING_RATE)
+            result = self.gradient_descent(gradient_function, returns, self.NUMBER_OF_SIMULATIONS, gradient_function, self.LEARNING_RATE)
         else:
             raise ValueError("Invalid optimization model.")
 
@@ -814,7 +814,8 @@ qaa_instance = QAA(
     higher_bound=0.9,
     start_date="2020-01-02",
     end_date="2024-01-23",
-    optimization_model="SLSQP",
+    optimization_model="GRADIENT DESCENT",
+    #optimization_model="SLSQP",
     #optimization_model="MONTECARLO",
     #optimization_model="GRADIENT DESCENT",
     #QAA_strategy="MIN VARIANCE",
