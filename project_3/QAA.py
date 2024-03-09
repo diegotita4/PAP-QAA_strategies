@@ -194,14 +194,8 @@ class QAA:
 
         try:
             # Extract relevant returns
-            if not isinstance(returns, pd.DataFrame) or returns.empty:
-                raise ValueError("Invalid or empty returns DataFrame provided.")
-
             portfolio_returns = returns.drop(columns=[self.benchmark])
             benchmark_returns = returns.drop(columns=self.tickers)
-
-            if not all(col in portfolio_returns.columns for col in self.tickers + [self.benchmark]):
-                raise ValueError("Mismatch between provided tickers and returns columns.")
 
             # Calculate portfolio metrics
             portfolio_return = np.dot(portfolio_returns.mean(), self.optimal_weights)
