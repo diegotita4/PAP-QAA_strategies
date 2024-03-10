@@ -36,7 +36,7 @@ class QAA:
     - portfolio_metrics(self, returns): Calculates and displays the performance and volatility of the portfolio compared to the benchmark.
     - fixed_parameters(self, returns): Preprocesses and sets fixed parameters for optimization.
     - QAA_strategy_selection(self, returns): Executes the selected QAA strategy based on the configuration in QAA_instance.
-    - optimization_method_selection(self, returns, objective_function, gradient_function): Executes the selected QAA strategy based on the configuration in QAA_instance.
+    - optimization_model_selection(self, returns, objective_function, gradient_function): Executes the selected QAA strategy based on the configuration in QAA_instance.
 
     - SLSQP(self, returns, objective_function): Optimizes the objective function using the SLSQP method.
     - montecarlo(self, returns, objective_function): Optimizes the objective function using the Montecarlo method.
@@ -317,6 +317,15 @@ class QAA:
             elif self.QAA_strategy == "ROY SAFETY FIRST RATIO":
                 return self.roy_safety_first_ratio(returns)
 
+            #elif self.QAA_strategy == "":
+                #return self.(returns)
+
+            #elif self.QAA_strategy == "":
+                #return self.(returns)
+
+            #elif self.QAA_strategy == "":
+                #return self.(returns)
+
             else:
                 raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized. Please choose a valid strategy.")
 
@@ -325,10 +334,10 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # OPTIMIZATION METHOD SELECTION
-    def optimization_method_selection(self, returns, objective_function, gradient_function):
+    # OPTIMIZATION MODEL SELECTION
+    def optimization_model_selection(self, returns, objective_function, gradient_function):
         """
-        Executes the selected optimization method based on the configuration in QAA_instance.
+        Executes the selected optimization model based on the configuration in QAA_instance.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -337,11 +346,11 @@ class QAA:
 
         Returns:
         - result (scipy.optimize.OptimizeResult): Optimization result.
-        - optimization_model (str): Selected optimization method.
+        - optimization_model (str): Selected optimization model.
         """
 
         try:
-            # Select and execute the chosen optimization method
+            # Select and execute the chosen optimization model
             if self.optimization_model == "SLSQP":
                 result = self.SLSQP(returns, objective_function)
                 optimization_model = "SLSQP"
@@ -355,19 +364,19 @@ class QAA:
                 optimization_model = "GRADIENT DESCENT"
 
             else:
-                raise ValueError(f"Invalid optimization method: {self.optimization_model}")
+                raise ValueError(f"Invalid optimization model: {self.optimization_model}")
 
             return result, optimization_model
 
         except Exception as e:
-            raise ValueError(f"Error in optimization method selection: {str(e)}")
+            raise ValueError(f"Error in optimization model selection: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 1ST OPTIMIZE METHOD: "SLSQP"
+    # 1ST OPTIMIZE MODEL: "SLSQP"
     def SLSQP(self, returns, objective_function):
         """
-        Optimizes the objective function using the SLSQP method.
+        Optimizes the objective function using the SLSQP model.
 
         Parameters:
         - returns (pd.DataFrame): Processed returns after removing the benchmark.
@@ -381,7 +390,7 @@ class QAA:
         weights, bounds, constraints = self.fixed_parameters(returns)
 
         try:
-            # Minimize the objective function using SLSQP method
+            # Minimize the objective function using SLSQP model
             result = minimize(objective_function, weights, method="SLSQP", bounds=bounds, constraints=constraints)
             return result
 
@@ -390,10 +399,10 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 2ND OPTIMIZE METHOD: "MONTECARLO (BFGS)"
+    # 2ND OPTIMIZE MODEL: "MONTECARLO (BFGS)"
     def montecarlo(self, returns, objective_function):
         """
-        Optimizes the objective function using the Montecarlo method.
+        Optimizes the objective function using the Montecarlo model.
 
         Parameters:
         - returns (pd.DataFrame): Processed returns after removing the benchmark.
@@ -427,7 +436,7 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 3RD OPTIMIZE METHOD: "GRADIENT DESCENT"
+    # 3RD OPTIMIZE MODEL: "GRADIENT DESCENT"
     def gradient_descent(self, returns, objective_function, gradient_function):
         """
         Optimizes the objective function using Gradient Descent.
@@ -506,7 +515,7 @@ class QAA:
             gradient_function = lambda w: 2 * np.dot(returns.cov(), w)
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -546,7 +555,7 @@ class QAA:
             gradient_function = lambda w: -((returns.mean() * self.DAYS_IN_YEAR - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w)))) * ((returns.cov() * self.DAYS_IN_YEAR) @ w) / (np.power(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w)), 1.5) * np.sqrt(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w))))
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -607,7 +616,7 @@ class QAA:
                 return grad
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -657,7 +666,7 @@ class QAA:
                 return semivariance
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -705,7 +714,7 @@ class QAA:
             gradient_function = lambda w: -((returns.mean() - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w)))) * (returns.cov() @ w) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))) - (downside_returns.cov() @ w) / downside_deviation(w)
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -760,7 +769,7 @@ class QAA:
             gradient_function = lambda weight: -(post_mu + self.TAU * post_cov.dot(weight))
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -815,7 +824,7 @@ class QAA:
             gradient_function = lambda weights: 2 * np.dot(cov_matrix, weights)
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result['x']
@@ -868,7 +877,7 @@ class QAA:
                 return gradient
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_method_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
