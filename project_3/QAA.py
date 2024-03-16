@@ -123,7 +123,7 @@ class QAA:
             raise ValueError("Invalid QAA strategy.")
 
         # Set default values
-        self.expected_returns = expected_returns if expected_returns is not None else [0.1] * len(tickers)
+        self.expected_returns = expected_returns if expected_returns is not None else np.array([0.1] * len(tickers))
         self.opinions = opinions if opinions is not None else np.zeros((len(expected_returns), len(tickers)))
         self.MAR = MAR if MAR is not None else 0.2
 
@@ -463,6 +463,8 @@ class QAA:
             try:
                 # Calculate gradient and update weights
                 gradient = gradient_function(weights)
+                #Check it to be a numpy array, it doesn´t work with anything else
+                gradient = gradient.values if isinstance(gradient,pd.Series) else gradient
                 new_weights = weights - self.LEARNING_RATE * gradient
 
                 # Clip weights to the specified bounds
