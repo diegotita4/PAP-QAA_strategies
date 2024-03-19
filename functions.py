@@ -126,7 +126,7 @@ class QAA:
         self.expected_returns = expected_returns if expected_returns is not None else np.array([0.1] * len(tickers))
         self.opinions = opinions if opinions is not None else np.zeros((len(expected_returns), len(tickers)))
         self.MAR = MAR if MAR is not None else 0.2
-
+        
         # Assign parameters
         self.tickers = tickers
         self.benchmark = benchmark
@@ -135,6 +135,7 @@ class QAA:
         self.higher_bound = higher_bound
         self.optimization_model = optimization_model
         self.QAA_strategy = QAA_strategy
+        self.tickers = tickers
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -943,7 +944,8 @@ class QAA:
     # 9TH QAA STRATEGY: "MARTINGALE"
     def martingale(self, returns):
         """
-        Martingale strategy for asset allocation.
+        Adjusts portfolio weights based on past performance, inspired by the Martingale strategy.
+        This function optimizes the portfolio using either SLSQP, Montecarlo, or Gradient Descent methods.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -951,42 +953,53 @@ class QAA:
         Returns:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
-
         try:
             # Drop benchmark column if present
             returns = returns.drop(columns=[self.benchmark])
 
-            def martingale_objective_function(weights, returns):
-                portfolio_return = np.sum(returns.mean() * weights)
-                return -portfolio_return
-            
-            def martingale_gradient_function(weights, returns):
-                mean_returns = returns.mean()
-                gradient = -mean_returns
-                return gradient
+            # Calculate past performance indicator (e.g., mean return)
+            performance_indicator = returns.mean()
 
-            # Define the objective function for Martingale
-            objective_function = lambda w: martingale_objective_function(w, returns)
+            # Define initial weights, bounds, and constraints
+            initial_weights = np.ones(len(returns.columns)) / len(returns.columns)
+            bounds = [(self.lower_bound, self.higher_bound) for _ in range(len(returns.columns))]
+            constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
 
-            # Define the gradient function for Martingale
-            gradient_function = lambda w: martingale_gradient_function(w, returns)
+            # Define the objective function
+            def objective_function(weights):
+                return -np.dot(weights, performance_indicator)  # Example simplified objective function
 
-            # Get the optimization result using the selected method
+            # Define the gradient function
+            def gradient_function(weights):
+                return -performance_indicator  # Gradient of the simplified objective function
+
+            # Call optimization model selection to execute the chosen optimization method
             result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
+            # Check if the optimization was successful
+            if not result.get("success", False):
+                raise Exception('Optimization failed.')
+
             # Extract optimal weights from the result
-            self.optimal_weights = result["x"]
+            optimal_weights = result["x"]
+
+            # Store optimal weights in the instance for use in portfolio_metrics
+            self.optimal_weights = optimal_weights
 
             # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+            weights_series = pd.Series(optimal_weights, index=self.tickers, name="Optimal Weights")
 
             # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model}:")
             print(weights_series)
-            return weights_series
 
+            return weights_series
         except Exception as e:
-            raise ValueError(f"Error in HRP strategy: {str(e)}")
+            raise ValueError(f"Error in Martingale-inspired strategy: {str(e)}")
+
+
+
+
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -1009,8 +1022,8 @@ class QAA:
 
 
             # Define the objective function and gradient function
-            objective_function = a
-            gradient_function = a
+            objective_function = 3
+            gradient_function = 3
 
             # Get the optimization result using the selected method
             result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
@@ -1050,8 +1063,8 @@ class QAA:
 
 
             # Define the objective function and gradient function
-            objective_function = a
-            gradient_function = a
+            objective_function = 3
+            gradient_function = 3
 
             # Get the optimization result using the selected method
             result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
