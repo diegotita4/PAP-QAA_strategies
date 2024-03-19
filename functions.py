@@ -50,7 +50,7 @@ class QAA:
     - black_litterman(self, returns): Calculates the portfolio with the Black Litterman using the specified optimization model.
     - HRP(self, returns): Calculates the portfolio weights using the HRP (Hierarchical Risk Parity) approach.
     - roy_safety_first_ratio(self, returns): Calculates the portfolio with the maximum Roy Safety First Ratio using the specified optimization model.
-    - 
+    - martingale(self, returns): Martingale strategy for asset allocation.
     - 
     - 
     """
@@ -82,7 +82,7 @@ class QAA:
         - optimization_model (str): Optimization model to use ("SLSQP", "MONTECARLO", OR "GRADIENT DESCENT").
         - QAA_strategy (str): QAA strategy to apply ("MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE",
                                                      "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FISRT RATIO",
-                                                     "", "", or "").
+                                                     "MARTINGALE", "", or "").
         - expected_returns (numpy array): Investor's expected returns, one for each asset. Default: None.
         - opinions (numpy array): How much you expect each asset to outperform the others. Default: None.
         - MAR (float): the Minimum Acceptable Return (MAR) in Roy's Safety-First Ratio strategy. Default: None.
@@ -119,7 +119,7 @@ class QAA:
             raise ValueError("Invalid optimization model.")
 
         # Validate QAA strategy
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FIRST RATIO", "MARTINGALE"]:#, "", "", ""]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FIRST RATIO", "MARTINGALE"]:#, "", ""]:
             raise ValueError("Invalid QAA strategy.")
 
         # Set default values
@@ -169,7 +169,6 @@ class QAA:
             variance = returns.var()
             covariance_matrix = returns.cov()
             correlation_matrix = returns.corr()
-
             return data, returns, volatility, variance, covariance_matrix, correlation_matrix
 
         except yf.exceptions.YFinanceError as e:
@@ -271,7 +270,6 @@ class QAA:
             weights = np.ones(num_assets) / num_assets
             bounds = np.array([(self.lower_bound, self.higher_bound)] * num_assets)
             constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
-
             return weights, bounds, constraints
 
         except ValueError as ve:
@@ -318,10 +316,7 @@ class QAA:
                 return self.roy_safety_first_ratio(returns)
             
             elif self.QAA_strategy == "MARTINGALE":
-                 return self.martingale(returns)
-
-            #elif self.QAA_strategy == "":
-                #return self.(returns)
+                return self.martingale(returns)
 
             #elif self.QAA_strategy == "":
                 #return self.(returns)
@@ -463,6 +458,7 @@ class QAA:
             try:
                 # Calculate gradient and update weights
                 gradient = gradient_function(weights)
+
                 #Check it to be a numpy array, it doesn´t work with anything else
                 gradient = gradient.values if isinstance(gradient,pd.Series) else gradient
                 new_weights = weights - self.LEARNING_RATE * gradient
@@ -531,11 +527,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in min_variance strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -571,11 +566,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in max_sharpe_ratio strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -632,11 +626,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in omega strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -682,11 +675,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in semivariance strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -730,11 +722,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in sortino_ratio strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -785,18 +776,17 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in black_litterman strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
     # 7TH QAA STRATEGY: "HRP (HIERARCHICAL RISK PARITY)"
     def HRP(self, returns):
         """
-        Calculates the portfolio weights using the Hierarchical Risk Parity (HRP) approach.
+        Calculates the portfolio weights using the HRP (Hierarchical Risk Parity) approach.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -805,66 +795,96 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
 
-        if self.benchmark in returns.columns:
+        try:
+            # Drop benchmark column if present
             returns = returns.drop(columns=[self.benchmark])
 
-        corr_matrix = returns.corr()
-        distance_matrix = np.sqrt((1 - corr_matrix) / 2)
-        linkage_matrix = linkage(squareform(distance_matrix), method='single')
-        sorted_indices = leaves_list(linkage_matrix)
-        sorted_assets = returns.columns[sorted_indices]
-        cov_matrix = returns.cov().iloc[sorted_indices, sorted_indices]
+            euclidean_distance = np.sqrt(0.5 * (1 - returns.corr()))
+            linkage_matrix = linkage(euclidean_distance, method="single")
+            leaves_order = leaves_list(linkage_matrix)
+            names = returns.iloc[:, leaves_order].columns
 
-        # Calculating initial weights using recursive bisection
-        weights_dict = self.recursive_bisection(cov_matrix, sorted_assets.tolist())
-        initial_weights = np.array(list(weights_dict.values()))
+            def bisection(items):
+                new_items = [i[int(j):int(k)] for i in items for j, k in ((0, len(i) // 2), (len(i) // 2, len(i))) if len(i) > 1]
+                return new_items
 
-        # Integration with optimization models
-        result_weights = initial_weights  # Default to initial weights in case optimization doesn't apply
+            def cluster_variation(returns, items):
+                cov = returns.cov().copy().loc[items, items]
+                inv_cov = np.linalg.inv(cov)
+                weights = 1 / np.diag(inv_cov)
+                weights /= np.sum(weights)
+                portfolio_variance = np.dot(weights.T, np.dot(cov, weights))
+                return portfolio_variance
 
-        # Define the objective function for optimization
-        def objective_function(weights):
-            return np.dot(weights.T, np.dot(cov_matrix, weights))
+            # Initialize weights
+            weights = pd.Series(1, index=names)
 
-        # Define the gradient function for Gradient Descent
-        def gradient_function(weights):
-            return 2 * np.dot(cov_matrix, weights)
+            # Initialize clusters with indices given by cluster
+            clusters = [names]
 
-        # Optimization model selection
-        if self.optimization_model == "SLSQP":
-            result = self.SLSQP(returns, objective_function)
-        elif self.optimization_model == "MONTECARLO":
-            result = self.montecarlo(returns, objective_function)
-        elif self.optimization_model == "GRADIENT DESCENT":
-            result = self.gradient_descent(returns, objective_function, gradient_function)
+            # While there are still clusters...
+            while len(clusters) > 0:
+                # Apply recursive bisection
+                clusters = bisection(clusters)
 
-        if self.optimization_model in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
-            result_weights = result['x']
+                # For each cluster from the recursive bisection splitting into two
+                for i in range(0, len(clusters), 2):
+                    # Get indices i and i+1 of clusters
+                    item_0 = clusters[i]
+                    item_1 = clusters[i + 1]
 
-        weights_series = pd.Series(result_weights, index=sorted_assets, name="Optimized HRP Weights")
+                    # Calculate variance of i and i+1 cluster, using cluster_variation
+                    v_0 = cluster_variation(returns, item_0)
+                    v_1 = cluster_variation(returns, item_1)
 
-        print(f"\nOptimal Portfolio Weights for HRP using {self.optimization_model}:")
-        print(weights_series)
+                    # Calculate alpha or adjustment factor for weights
+                    alpha = 1 - v_0 / (v_0 + v_1)
 
-        return weights_series
+                    # Adjust weights with alpha
+                    weights[item_0] *= alpha
+                    weights[item_1] *= 1 - alpha
 
-    def recursive_bisection(self, cov_matrix, assets):
-        # Base case: single asset
-        if len(assets) == 1:
-            return {assets[0]: 1.0}
+            # Define the objective function for HRP
+            def objective_function(weights):
+                portfolio_variance = 0
 
-        # Splitting assets into two clusters
-        middle_index = len(assets) // 2
-        left_cluster = assets[:middle_index]
-        right_cluster = assets[middle_index:]
+                # Calculate the variance of each cluster and sum them up
+                for items in clusters:
+                    cov = returns.cov().copy().loc[items, items]
+                    inv_cov = np.linalg.inv(cov)
+                    weights_cluster = weights[items]
+                    portfolio_variance += np.dot(weights_cluster.T, np.dot(cov, weights_cluster))
 
-        # Recursive bisection for each cluster
-        left_weights = self.recursive_bisection(cov_matrix.loc[left_cluster, left_cluster], left_cluster)
-        right_weights = self.recursive_bisection(cov_matrix.loc[right_cluster, right_cluster], right_cluster)
+                return portfolio_variance
 
-        # Combine weights from left and right clusters
-        combined_weights = {**left_weights, **right_weights}
-        return combined_weights
+            # Define the gradient function for HRP
+            def gradient_function(weights):
+                grad = np.zeros(len(weights))
+
+                for items in clusters:
+                    cov = returns.cov().copy().loc[items, items]
+                    inv_cov = np.linalg.inv(cov)
+                    weights_cluster = weights[items]
+                    grad[items] = -2 * np.dot(cov, weights_cluster)
+
+                return grad
+
+            # Get the optimization result using the selected method
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+
+            # Extract optimal weights from the result
+            self.optimal_weights = result["x"]
+
+            # Create a pandas Series for optimal weights
+            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+            # Display optimal weights
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(weights_series)
+            return weights_series
+
+        except Exception as e:
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -913,11 +933,10 @@ class QAA:
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
             print(weights_series)
-
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in Roy Safety First Ratio strategy: {str(e)}")
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -933,92 +952,120 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
 
-        # Drop benchmark column if present
-        returns = returns.drop(columns=[self.benchmark])
-        
-        def martingale_objective_function(weights, returns):
-            """
-            Función objetivo para la estrategia Martingala.
-            
-            :param weights: np.array, pesos de los activos en la cartera.
-            :param returns: pd.DataFrame, retornos históricos de los activos.
-            :return: float, valor de la función objetivo.
-            """
-            # Simulamos el rendimiento de la cartera basado en la estrategia Martingala
-            portfolio_return = np.sum(returns.mean() * weights)
-            return -portfolio_return  # Negativo, ya que buscamos maximizar
-        
-        def martingale_gradient_function(weights, returns):
-            """
-            Función de gradiente para la estrategia Martingala.
-            
-            :param weights: np.array, pesos de los activos en la cartera.
-            :param returns: pd.DataFrame, retornos históricos de los activos.
-            :return: np.array, gradiente de la función objetivo.
-            """
-            mean_returns = returns.mean()
-            gradient = -mean_returns  # Negativo, ya que buscamos maximizar
-            return gradient
-        
-        # Define the objective function and gradient function
-        objective_function = lambda w: martingale_objective_function(w, returns)
-        gradient_function = lambda w: martingale_gradient_function(w, returns)
-        
-        # Get the optimization result using the selected method
-        result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
-        
-        # Extract optimal weights from the result
-        self.optimal_weights = result.x
-        
-        # Create a pandas Series for optimal weights
-        weights_series = pd.Series(self.optimal_weights, index=returns.columns, name="Martingale Weights")
-        
-        # Display optimal weights
-        print("\nOptimal Portfolio Weights for Martingale QAA using", optimization_model, "optimization:")
-        print(weights_series)
-        
-        return weights_series
+        try:
+            # Drop benchmark column if present
+            returns = returns.drop(columns=[self.benchmark])
 
+            def martingale_objective_function(weights, returns):
+                portfolio_return = np.sum(returns.mean() * weights)
+                return -portfolio_return
+            
+            def martingale_gradient_function(weights, returns):
+                mean_returns = returns.mean()
+                gradient = -mean_returns
+                return gradient
+
+            # Define the objective function for Martingale
+            objective_function = lambda w: martingale_objective_function(w, returns)
+
+            # Define the gradient function for Martingale
+            gradient_function = lambda w: martingale_gradient_function(w, returns)
+
+            # Get the optimization result using the selected method
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+
+            # Extract optimal weights from the result
+            self.optimal_weights = result["x"]
+
+            # Create a pandas Series for optimal weights
+            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+            # Display optimal weights
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(weights_series)
+            return weights_series
+
+        except Exception as e:
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
+    # 10TH QAA STRATEGY: ""
+    def ten(self, returns):
+        """
+        
 
-# EXAMPLE
-qaa_instance = QAA(
-    tickers=["ABBV", "MET", "OXY", "PERI"],
-    benchmark="SPY",
-    rf=0.02,
-    lower_bound=0.10,
-    higher_bound=0.90,
-    start_date="2020-01-02",
-    end_date="2024-01-23",
-    expected_returns=np.array([.15, .1, .1, .1]),
-    opinions=np.array([[1, 0, 0, 0], [0, 1, -3, 0], [0, 0, 1, -1], [0, 0, 0, 0]]),
-    MAR=0.2,
-    optimization_model="SLSQP",
-    #optimization_model="SLSQP",
-    #optimization_model="MONTECARLO",
-    #optimization_model="GRADIENT DESCENT",
-    QAA_strategy="MARTINGALE",
-    #QAA_strategy="MIN VARIANCE",
-    #QAA_strategy="MAX SHARPE RATIO",
-    #QAA_strategy="OMEGA",
-    #QAA_strategy="SEMIVARIANCE",
-    #QAA_strategy="SORTINO RATIO",
-    #QAA_strategy="BLACK LITTERMAN",   # NO CORRE CON "GRADIENT DESCENT"
-    #QAA_strategy="HRP",
-    #QAA_strategy="ROY SAFETY FIRST RATIO",
-    #QAA_strategy="MARTINGALE"
-    #QAA_strategy=""
-    #QAA_strategy=""
-)
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
 
-try:
-    data, returns, std, var, cov, corr = qaa_instance.assets_metrics()
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
 
-    optimal_weights = qaa_instance.QAA_strategy_selection(returns=returns)
+        try:
+            # Drop benchmark column if present
+            returns = returns.drop(columns=[self.benchmark])
 
-    qaa_instance.portfolio_metrics(returns)
 
-except ValueError as ve:
-    print(f"Error: {str(ve)}")
+
+            # Define the objective function and gradient function
+            objective_function = a
+            gradient_function = a
+
+            # Get the optimization result using the selected method
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+
+            # Extract optimal weights from the result
+            self.optimal_weights = result["x"]
+
+            # Create a pandas Series for optimal weights
+            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+            # Display optimal weights
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(weights_series)
+            return weights_series
+
+        except Exception as e:
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
+
+# ----------------------------------------------------------------------------------------------------
+
+    # 11TH QAA STRATEGY: ""
+    def eleven(self, returns):
+        """
+        
+
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets.
+
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
+
+        try:
+            # Drop benchmark column if present
+            returns = returns.drop(columns=[self.benchmark])
+
+
+
+            # Define the objective function and gradient function
+            objective_function = a
+            gradient_function = a
+
+            # Get the optimization result using the selected method
+            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+
+            # Extract optimal weights from the result
+            self.optimal_weights = result["x"]
+
+            # Create a pandas Series for optimal weights
+            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+            # Display optimal weights
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(weights_series)
+            return weights_series
+
+        except Exception as e:
+            raise ValueError(f"Error in HRP strategy: {str(e)}")
