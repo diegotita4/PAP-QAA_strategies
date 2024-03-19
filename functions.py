@@ -945,7 +945,7 @@ class QAA:
     def martingale(self, returns):
         """
         Adjusts portfolio weights based on past performance, inspired by the Martingale strategy.
-        This function optimizes the portfolio using either SLSQP, Montecarlo, or Gradient Descent methods.
+        This function calculates the optimal portfolio weights using a specified optimization model, focusing on maximizing returns based on past performance.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -954,26 +954,29 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
         try:
-            # Drop benchmark column if present
-            returns = returns.drop(columns=[self.benchmark])
+            # Drop the benchmark column from returns
+            returns = returns.drop(columns=[self.benchmark], errors='ignore')
 
             # Calculate past performance indicator (e.g., mean return)
             performance_indicator = returns.mean()
 
-            # Define initial weights, bounds, and constraints
-            initial_weights = np.ones(len(returns.columns)) / len(returns.columns)
-            bounds = [(self.lower_bound, self.higher_bound) for _ in range(len(returns.columns))]
-            constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
 
-            # Define the objective function
-            def objective_function(weights):
-                return -np.dot(weights, performance_indicator)  # Example simplified objective function
-
-            # Define the gradient function
             def gradient_function(weights):
-                return -performance_indicator  # Gradient of the simplified objective function
+                mean_returns = returns.mean()
+                cov_matrix = returns.cov()
+                portfolio_return = np.dot(weights, mean_returns)
+                portfolio_volatility = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
 
-            # Call optimization model selection to execute the chosen optimization method
+                grad_expected_return = mean_returns
+                grad_volatility = np.dot(cov_matrix, weights) / portfolio_volatility
+
+                gradient = -(grad_expected_return * portfolio_volatility - (portfolio_return - self.MAR) * grad_volatility) / (portfolio_volatility ** 2)
+                return gradient
+
+            def objective_function(weights):
+                return -np.dot(weights, performance_indicator)
+
+            # Get the optimization result using the selected method
             result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
 
             # Check if the optimization was successful
@@ -981,23 +984,18 @@ class QAA:
                 raise Exception('Optimization failed.')
 
             # Extract optimal weights from the result
-            optimal_weights = result["x"]
-
-            # Store optimal weights in the instance for use in portfolio_metrics
-            self.optimal_weights = optimal_weights
+            self.optimal_weights = result["x"]
 
             # Create a pandas Series for optimal weights
-            weights_series = pd.Series(optimal_weights, index=self.tickers, name="Optimal Weights")
+            weights_series = pd.Series(self.optimal_weights, index=returns.columns, name="Optimal Weights")
 
             # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model}:")
+            print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model} optimization:")
             print(weights_series)
 
             return weights_series
         except Exception as e:
             raise ValueError(f"Error in Martingale-inspired strategy: {str(e)}")
-
-
 
 
 
