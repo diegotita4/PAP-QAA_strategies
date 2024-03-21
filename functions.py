@@ -585,52 +585,68 @@ class QAA:
         Returns:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
-
         try:
-            # Drop the benchmark column from returns
-            returns = returns.drop(columns=[self.benchmark])
-
-            # Define the threshold return
-            threshold_return = self.rf / self.DAYS_IN_YEAR
+            # Ensure the benchmark returns are part of the DataFrame
+            benchmark_returns = returns[self.benchmark]
+            asset_returns = returns.drop(columns=[self.benchmark])
 
             # Define the objective function for OMEGA
             def objective_function(weights):
-                portfolio_returns = np.dot(returns, weights)
-                excess_returns = portfolio_returns - threshold_return
-
+                portfolio_returns = np.dot(asset_returns, weights)
+                excess_returns = portfolio_returns - benchmark_returns
+                
                 upside_potential = np.sum(excess_returns[excess_returns > 0]) / len(excess_returns)
-                downside_risk = -np.sum(excess_returns[excess_returns < 0]) / len(excess_returns) if np.sum(excess_returns < 0) != 0 else 1
-
+                downside_risk = np.sqrt(np.mean(np.square(np.minimum(excess_returns, 0))))
+                
                 omega_ratio = upside_potential / downside_risk
-                return -omega_ratio
+                return -omega_ratio  # Negative for maximization
 
             # Define the gradient function for OMEGA
             def gradient_function(weights):
-                eps = 1e-8
-                grad = np.zeros(len(weights))
-
+                epsilon = 1e-8  # Small value for numerical differentiation
+                grad = np.zeros_like(weights)  # Initialize the gradient vector
+                
                 for i in range(len(weights)):
-                    weights_p = np.array(weights)
-                    weights_p[i] += eps
-                    grad[i] = (objective_function(weights_p) - objective_function(weights)) / eps
+                    weights_plus = np.array(weights)
+                    weights_minus = np.array(weights)
+                    
+                    weights_plus[i] += epsilon
+                    weights_minus[i] -= epsilon
+                    
+                    omega_plus = objective_function(weights_plus)
+                    omega_minus = objective_function(weights_minus)
+                    
+                    grad[i] = (omega_plus - omega_minus) / (2 * epsilon)
+                    
                 return grad
 
-            # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            # Perform the optimization using the selected optimization model
+            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function, gradient_function)
 
-            # Extract optimal weights from the result
-            self.optimal_weights = result["x"]
+            # Correctly handle the result based on its type
+            if isinstance(result, dict):
+                if 'x' in result:
+                    optimal_weights = result['x']
+                else:
+                    raise ValueError("Optimization result does not contain 'x'.")
+            else:
+                optimal_weights = result.x
+
+            # Set the optimal weights to the instance variable
+            self.optimal_weights = optimal_weights
 
             # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+            weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
 
-            # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            # Optional: Display optimal weights
+            print(f"\nOptimal Portfolio Weights for OMEGA QAA using {optimization_model} optimization:")
             print(weights_series)
+
             return weights_series
 
         except Exception as e:
-            raise ValueError(f"Error in HRP strategy: {str(e)}")
+            raise ValueError(f"Error in OMEGA strategy: {str(e)}")
+
 
 # ----------------------------------------------------------------------------------------------------
 
