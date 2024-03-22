@@ -57,11 +57,11 @@ class QAA:
 
     # FORMAT VARIABLES
     TAU = 0.025
-    TOLERANCE = 1e-8
+    TOLERANCE = 1e-2
     DAYS_IN_YEAR = 252
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.30
     DATE_FORMAT = "%Y-%m-%d"
-    NUMBER_OF_SIMULATIONS = 10000
+    NUMBER_OF_SIMULATIONS = 30000
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -574,10 +574,11 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 3RD QAA STRATEGY: "OMEGA"
+
+     # 3RD QAA STRATEGY: "OMEGA"
     def omega(self, returns):
         """
-        Calculates the portfolio with the maximum OMEGA using the specified optimization model.
+        Calculates the portfolio with the maximum Omega using the specified optimization model.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -585,67 +586,61 @@ class QAA:
         Returns:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
-        try:
-            # Ensure the benchmark returns are part of the DataFrame
-            benchmark_returns = returns[self.benchmark]
-            asset_returns = returns.drop(columns=[self.benchmark])
+        # Separar el benchmark del resto de los activos
+        benchmark_returns = returns[self.benchmark]
+        asset_returns = returns.drop(columns=[self.benchmark])
 
-            # Define the objective function for OMEGA
-            def objective_function(weights):
-                portfolio_returns = np.dot(asset_returns, weights)
-                excess_returns = portfolio_returns - benchmark_returns
-                
-                upside_potential = np.sum(excess_returns[excess_returns > 0]) / len(excess_returns)
-                downside_risk = np.sqrt(np.mean(np.square(np.minimum(excess_returns, 0))))
-                
-                omega_ratio = upside_potential / downside_risk
-                return -omega_ratio  # Negative for maximization
+        # Calcular la diferencia de rendimientos con respecto al benchmark
+        differences = asset_returns.sub(benchmark_returns, axis=0)
 
-            # Define the gradient function for OMEGA
-            def gradient_function(weights):
-                epsilon = 1e-8  # Small value for numerical differentiation
-                grad = np.zeros_like(weights)  # Initialize the gradient vector
-                
-                for i in range(len(weights)):
-                    weights_plus = np.array(weights)
-                    weights_minus = np.array(weights)
-                    
-                    weights_plus[i] += epsilon
-                    weights_minus[i] -= epsilon
-                    
-                    omega_plus = objective_function(weights_plus)
-                    omega_minus = objective_function(weights_minus)
-                    
-                    grad[i] = (omega_plus - omega_minus) / (2 * epsilon)
-                    
-                return grad
+        def downside_risk(differences):
+            negative_differences = differences[differences < 0]
+            return np.sqrt(negative_differences.var() * self.DAYS_IN_YEAR)
 
-            # Perform the optimization using the selected optimization model
-            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function, gradient_function)
+        def upside_risk(differences):
+            positive_differences = differences[differences > 0]
+            return np.sqrt(positive_differences.var() * self.DAYS_IN_YEAR)
 
-            # Correctly handle the result based on its type
-            if isinstance(result, dict):
-                if 'x' in result:
-                    optimal_weights = result['x']
-                else:
-                    raise ValueError("Optimization result does not contain 'x'.")
-            else:
-                optimal_weights = result.x
+        omegas = {ticker: upside_risk(differences[ticker]) / downside_risk(differences[ticker])
+                for ticker in self.tickers}
 
-            # Set the optimal weights to the instance variable
-            self.optimal_weights = optimal_weights
+        # Función objetivo para optimizar
+        def objective_function(weights):
+            portfolio_omega = sum(omegas[ticker] * weight for ticker, weight in zip(self.tickers, weights))
+            return -portfolio_omega  # Negativo porque queremos maximizar
+        
+        def gradient_function(weights):
+            epsilon = 1e-8  # Un pequeño cambio en los pesos para calcular el gradiente
+            grad = np.zeros_like(weights)
+            for i in range(len(weights)):
+                weights_plus = np.array(weights, copy=True)
+                weights_plus[i] += epsilon
+                grad[i] = (objective_function(weights_plus) - objective_function(weights)) / epsilon
+            return grad
 
-            # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
+        # Integrar con el método de selección del modelo de optimización
+        result, optimization_model = self.optimization_model_selection(asset_returns, objective_function, gradient_function)
 
-            # Optional: Display optimal weights
-            print(f"\nOptimal Portfolio Weights for OMEGA QAA using {optimization_model} optimization:")
-            print(weights_series)
+        self.optimal_weights = result['x']  
 
-            return weights_series
+        # Ajusta el manejo de errores basado en un diccionario
+        if not result.get('success', False):
+            raise ValueError("La optimización no fue exitosa. " + result.get('message', ''))
 
-        except Exception as e:
-            raise ValueError(f"Error in OMEGA strategy: {str(e)}")
+
+        # Crear y mostrar la serie de pesos óptimos
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+        print(f"\nOptimal Portfolio Weights for Omega QAA using {optimization_model} optimization:")
+        print(weights_series)
+        return weights_series
+
+
+
+
+ 
+
+
+
 
 
 # ----------------------------------------------------------------------------------------------------
