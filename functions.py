@@ -577,7 +577,7 @@ class QAA:
     # 3RD QAA STRATEGY: "OMEGA"
     def omega(self, returns):
         """
-        Calculates the portfolio with the maximum OMEGA using the specified optimization model.
+        Calculates the portfolio with the maximum Omega using the specified optimization model.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -585,52 +585,53 @@ class QAA:
         Returns:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
+        # Separar el benchmark del resto de los activos
+        benchmark_returns = returns[self.benchmark]
+        asset_returns = returns.drop(columns=[self.benchmark])
 
-        try:
-            # Drop the benchmark column from returns
-            returns = returns.drop(columns=[self.benchmark])
+        # Calcular la diferencia de rendimientos con respecto al benchmark
+        differences = asset_returns.sub(benchmark_returns, axis=0)
 
-            # Define the threshold return
-            threshold_return = self.rf / self.DAYS_IN_YEAR
+        def downside_risk(differences):
+            negative_differences = differences[differences < 0]
+            return np.sqrt(negative_differences.var() * self.DAYS_IN_YEAR)
 
-            # Define the objective function for OMEGA
-            def objective_function(weights):
-                portfolio_returns = np.dot(returns, weights)
-                excess_returns = portfolio_returns - threshold_return
+        def upside_risk(differences):
+            positive_differences = differences[differences > 0]
+            return np.sqrt(positive_differences.var() * self.DAYS_IN_YEAR)
 
-                upside_potential = np.sum(excess_returns[excess_returns > 0]) / len(excess_returns)
-                downside_risk = -np.sum(excess_returns[excess_returns < 0]) / len(excess_returns) if np.sum(excess_returns < 0) != 0 else 1
+        omegas = {ticker: upside_risk(differences[ticker]) / downside_risk(differences[ticker])
+                for ticker in self.tickers}
 
-                omega_ratio = upside_potential / downside_risk
-                return -omega_ratio
+        # Función objetivo para optimizar
+        def objective_function(weights):
+            portfolio_omega = sum(omegas[ticker] * weight for ticker, weight in zip(self.tickers, weights))
+            return -portfolio_omega  # Negativo porque queremos maximizar
+        
+        def gradient_function(weights):
+            epsilon = 1e-8  # Un pequeño cambio en los pesos para calcular el gradiente
+            grad = np.zeros_like(weights)
+            for i in range(len(weights)):
+                weights_plus = np.array(weights, copy=True)
+                weights_plus[i] += epsilon
+                grad[i] = (objective_function(weights_plus) - objective_function(weights)) / epsilon
+            return grad
 
-            # Define the gradient function for OMEGA
-            def gradient_function(weights):
-                eps = 1e-8
-                grad = np.zeros(len(weights))
+        # Integrar con el método de selección del modelo de optimización
+        result, optimization_model = self.optimization_model_selection(asset_returns, objective_function, gradient_function)
 
-                for i in range(len(weights)):
-                    weights_p = np.array(weights)
-                    weights_p[i] += eps
-                    grad[i] = (objective_function(weights_p) - objective_function(weights)) / eps
-                return grad
+        self.optimal_weights = result['x']  
 
-            # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+        # Ajusta el manejo de errores basado en un diccionario
+        if not result.get('success', False):
+            raise ValueError("La optimización no fue exitosa. " + result.get('message', ''))
 
-            # Extract optimal weights from the result
-            self.optimal_weights = result["x"]
 
-            # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
-
-            # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
-            print(weights_series)
-            return weights_series
-
-        except Exception as e:
-            raise ValueError(f"Error in HRP strategy: {str(e)}")
+        # Crear y mostrar la serie de pesos óptimos
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+        print(f"\nOptimal Portfolio Weights for Omega QAA using {optimization_model} optimization:")
+        print(weights_series)
+        return weights_series
 
 # ----------------------------------------------------------------------------------------------------
 
