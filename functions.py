@@ -57,11 +57,11 @@ class QAA:
 
     # FORMAT VARIABLES
     TAU = 0.025
-    TOLERANCE = 1e-8
+    TOLERANCE = 1e-2
     DAYS_IN_YEAR = 252
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.30
     DATE_FORMAT = "%Y-%m-%d"
-    NUMBER_OF_SIMULATIONS = 10000
+    NUMBER_OF_SIMULATIONS = 30000
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -574,7 +574,8 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 3RD QAA STRATEGY: "OMEGA"
+
+     # 3RD QAA STRATEGY: "OMEGA"
     def omega(self, returns):
         """
         Calculates the portfolio with the maximum Omega using the specified optimization model.
@@ -626,12 +627,13 @@ class QAA:
         if not result.get('success', False):
             raise ValueError("La optimización no fue exitosa. " + result.get('message', ''))
 
-
         # Crear y mostrar la serie de pesos óptimos
         weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
         print(f"\nOptimal Portfolio Weights for Omega QAA using {optimization_model} optimization:")
         print(weights_series)
         return weights_series
+
+
 
 # ----------------------------------------------------------------------------------------------------
 
