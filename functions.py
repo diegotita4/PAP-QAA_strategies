@@ -362,6 +362,10 @@ class QAA:
                 result = self.gradient_descent(returns, objective_function, gradient_function)
                 optimization_model = "GRADIENT DESCENT"
 
+            elif self.optimization_model == "COBYLA":
+                result = self.COBYLA(returns, objective_function)
+                optimization_model = "COBYLA"
+
             else:
                 raise ValueError(f"Invalid optimization model: {self.optimization_model}")
 
@@ -493,6 +497,35 @@ class QAA:
         # Prepare and return optimization result
         result = {"x": weights, "fun": objective_function(weights), "nit": iteration, "success": iteration < self.NUMBER_OF_SIMULATIONS}
         return result
+
+# ----------------------------------------------------------------------------------------------------
+
+    # 4TH OPTIMIZE MODEL: "COBYLA"
+
+    def COBYLA(self, returns, objective_function):
+        """
+        Optimizes the objective function using the COBYLA model.
+
+        Parameters:
+        - returns (pd.DataFrame): Processed returns after removing the benchmark.
+        - objective_function (function): Objective function to optimize.
+
+        Returns:
+        - result (scipy.optimize.OptimizeResult): Optimization result.
+        """
+
+        # Get initial weights and constraints (COBYLA does not use bounds)
+        weights, _, constraints = self.fixed_parameters(returns)
+
+        try:
+            # Minimize the objective function using COBYLA model
+            result = minimize(objective_function, weights, method="COBYLA", constraints=constraints, 
+                              options={ # Values to modify for get better solution:
+                              'maxiter': 1000, # Max Iterations
+                              'tol': 1e-2}) # Tolerance rate
+            return result
+        except Exception as e:
+            raise ValueError(f"Error in COBYLA optimization: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
