@@ -115,7 +115,7 @@ class QAA:
             raise ValueError("Bounds must be between 0 and 1.")
 
         # Validate optimization model
-        if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
+        if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT", "COBYLA"]:
             raise ValueError("Invalid optimization model.")
 
         # Validate QAA strategy
