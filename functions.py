@@ -57,9 +57,9 @@ class QAA:
 
     # FORMAT VARIABLES
     TAU = 0.025
-    TOLERANCE = 1e-2
+    TOLERANCE = 1e-6
     DAYS_IN_YEAR = 252
-    LEARNING_RATE = 0.30
+    LEARNING_RATE = 0.005
     DATE_FORMAT = "%Y-%m-%d"
     NUMBER_OF_SIMULATIONS = 30000
 
@@ -610,7 +610,7 @@ class QAA:
             return -portfolio_omega  # Negativo porque queremos maximizar
         
         def gradient_function(weights):
-            epsilon = 1e-8  # Un pequeño cambio en los pesos para calcular el gradiente
+            epsilon = -1000000000000
             grad = np.zeros_like(weights)
             for i in range(len(weights)):
                 weights_plus = np.array(weights, copy=True)
