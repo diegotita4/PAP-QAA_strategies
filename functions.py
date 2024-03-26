@@ -275,7 +275,6 @@ class QAA:
 
         except ValueError as ve:
             raise ValueError(f"Error in fixed parameters calculation: {str(ve)}")
-
 # ----------------------------------------------------------------------------------------------------
 
     # STRATEGY SELECTION
@@ -521,7 +520,7 @@ class QAA:
             # Minimize the objective function using COBYLA model
             result = minimize(objective_function, weights, method="COBYLA", constraints=constraints, 
                               options={ # Values to modify for get better solution:
-                              'maxiter': 1000, # Max Iterations
+                              'maxiter': 10000, # Max Iterations
                               'tol': 1e-2}) # Tolerance rate
             return result
         except Exception as e:
