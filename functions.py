@@ -670,10 +670,8 @@ class QAA:
             # Define the objective function (without a clear gradient function here)
             objective_function = lambda w: np.dot(w.T, np.dot(semi_var, w))
 
-            gradient_function = lambda w: 2 * np.dot(semi_var, w)
-
             # Choose the optimization model based on the user's selection
-            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result.x
