@@ -296,7 +296,7 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # STRATEGY SELECTION
-    def QAA_strategy_selection(self, returns, downside_risk):
+    def QAA_strategy_selection(self, returns):
         """
         Executes the selected QAA strategy based on the configuration in QAA_instance.
 
@@ -319,7 +319,7 @@ class QAA:
                 return self.omega(returns)
 
             elif self.QAA_strategy == "SEMIVARIANCE":
-                return self.semivariance(returns,downside_risk)
+                return self.semivariance(returns)
 
             elif self.QAA_strategy == "SORTINO RATIO":
                 return self.sortino_ratio(returns)
@@ -635,58 +635,39 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # 4TH QAA STRATEGY: "SEMIVARIANCE"
-    def semivariance(self, returns, downside_risk):
-        """
-        Adjusts the semivariance function to correctly use correlations
-        without including the benchmark, focusing on the assets only.
+    def semivariance(self, returns):
+        # Separar el benchmark del resto de los activos
+        benchmark_returns = returns[self.benchmark]
+        asset_returns = returns.drop(columns=[self.benchmark])
 
-        Parameters:
-        - returns (pd.DataFrame): Historical returns of the assets, including the benchmark.
-        - downside_risk (pd.Series): Downside risk of the assets.
+        # Calcular la diferencia de rendimientos con respecto al benchmark
+        differences = asset_returns.subtract(benchmark_returns, axis=0)
 
-        Returns:
-        - weights_series (pd.Series): Optimal weights of the portfolio.
-        """
+        # Calcular el riesgo a la baja
+        def downside_risk(differences):
+            negative_differences = differences[differences < 0]
+            return np.sqrt((negative_differences ** 2).mean())
 
-        try:
-            # Drop the benchmark column from returns
-            asset_returns = returns.drop(columns=[self.benchmark])
+        # Calcular la semivarianza como la varianza de los rendimientos negativos respecto al benchmark
+        semi_variances = differences.apply(lambda x: downside_risk(x) ** 2)
 
-            # Calculate the correlation matrix for assets only
-            correlation_matrix = asset_returns.corr()
+        # La función objetivo podría ser simplemente minimizar la semivarianza total del portafolio,
+        # o podrías incorporar otras consideraciones.
+        objective_function = lambda w: w @ semi_variances
 
-            # Convert downside_risk to a DataFrame and calculate the matrix multiplication
-            # Note: This part of the original code seems to misunderstand the calculation of semivariance.
-            # Semivariance usually involves the returns directly, not through a correlation matrix.
-            # For demonstration, this step remains but its practical application might be reconsidered.
-            downside_risk_df = downside_risk.to_frame()
-            downside_risk_transposed = downside_risk_df.T
-            mmult = np.dot(downside_risk_df, downside_risk_transposed)
-            mmult_df = pd.DataFrame(mmult, index=self.tickers, columns=self.tickers)
+        # Llama a optimization_model_selection con solo los argumentos requeridos
+        result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
-            # Apply correlation to the multiplied downside risk matrix
-            semi_var = (mmult_df * correlation_matrix) * 100
+        # Extract optimal weights from the result
+        self.optimal_weights = result.x
 
-            # Define the objective function (without a clear gradient function here)
-            objective_function = lambda w: np.dot(w.T, np.dot(semi_var, w))
+        # Create a pandas Series for optimal weights
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
 
-            # Choose the optimization model based on the user's selection
-            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
-
-            # Extract optimal weights from the result
-            self.optimal_weights = result.x
-
-            # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
-
-            # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
-            print(weights_series)
-            return weights_series
-
-        except Exception as e:
-            raise ValueError(f"Error in Semivariance strategy: {str(e)}")
-
+        # Display optimal weights
+        print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+        print(weights_series)
+        return weights_series
 # ----------------------------------------------------------------------------------------------------
 
     # 5TH QAA STRATEGY: "SORTINO RATIO"
