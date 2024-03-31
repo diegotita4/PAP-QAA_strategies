@@ -10,12 +10,12 @@
 """
 
 """
-PATH 1: Terminal:
+OPTION 1: Terminal:
 
 1-. Run the command pip freeze > requirements.txt.
 2-. Install the dependencies using pip install -r requirements.txt.
 
-PATH 2: Visual Studio:
+OPTION 2: Visual Studio:
 
 1-. Create a virtual environment using python -m venv venv.
 2-. Select it in VSCode by going to View -> Command Palette -> Python: Select Interpreter.

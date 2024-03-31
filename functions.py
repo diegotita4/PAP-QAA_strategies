@@ -58,9 +58,9 @@ class QAA:
 
     # FORMAT VARIABLES
     TAU = 0.025
-    TOLERANCE = 1e-6
+    TOLERANCE = 1e-2
     DAYS_IN_YEAR = 252
-    LEARNING_RATE = 0.005
+    LEARNING_RATE = 0.30
     DATE_FORMAT = "%Y-%m-%d"
     NUMBER_OF_SIMULATIONS = 30000
 
@@ -128,7 +128,6 @@ class QAA:
         self.opinions = opinions if opinions is not None else np.zeros((len(expected_returns), len(tickers)))
         self.MAR = MAR if MAR is not None else 0.2
         
-        
         # Assign parameters
         self.tickers = tickers
         self.benchmark = benchmark
@@ -137,7 +136,6 @@ class QAA:
         self.higher_bound = higher_bound
         self.optimization_model = optimization_model
         self.QAA_strategy = QAA_strategy
-        self.tickers = tickers
         self.tickers = tickers
 
 # ----------------------------------------------------------------------------------------------------
@@ -283,6 +281,7 @@ class QAA:
 
         except ValueError as ve:
             raise ValueError(f"Error in fixed parameters calculation: {str(ve)}")
+
 # ----------------------------------------------------------------------------------------------------
 
     # STRATEGY SELECTION
@@ -488,7 +487,7 @@ class QAA:
 
         try:
             # Minimize the objective function using PSO model
-            result = 1
+            
             return result
 
         except Exception as e:
@@ -572,11 +571,9 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-
-     # 3RD QAA STRATEGY: "OMEGA"
+    # 3RD QAA STRATEGY: "OMEGA"
     def omega(self, returns):
         """
-        Calculates the portfolio with the maximum Omega using the specified optimization model.
         Calculates the portfolio with the maximum Omega using the specified optimization model.
 
         Parameters:
@@ -903,8 +900,6 @@ class QAA:
         """
         Adjusts portfolio weights based on past performance, inspired by the Martingale strategy.
         This function calculates the optimal portfolio weights using a specified optimization model, focusing on maximizing returns based on past performance.
-        Adjusts portfolio weights based on past performance, inspired by the Martingale strategy.
-        This function calculates the optimal portfolio weights using a specified optimization model, focusing on maximizing returns based on past performance.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -929,23 +924,16 @@ class QAA:
             if not result.get("success", False):
                 raise Exception('Optimization failed.')
 
-            # Check if the optimization was successful
-            if not result.get("success", False):
-                raise Exception('Optimization failed.')
-
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
 
             # Create a pandas Series for optimal weights
             weights_series = pd.Series(self.optimal_weights, index=returns.columns, name="Optimal Weights")
-            weights_series = pd.Series(self.optimal_weights, index=returns.columns, name="Optimal Weights")
 
             # Display optimal weights
             print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model} optimization:")
-            print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model} optimization:")
             print(weights_series)
 
-            return weights_series
             return weights_series
         except Exception as e:
             raise ValueError(f"Error in Martingale-inspired strategy: {str(e)}")
