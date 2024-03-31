@@ -635,15 +635,13 @@ class QAA:
         diff = asset_returns.subtract(benchmark_returns, axis=0)
         diff_neg = diff.copy()
         diff_neg[diff_neg > 0] = 0
-        downside_risk = diff_neg.std()
+        # Calcular el riesgo a la baja correctamente
+        downside_risk = diff_neg.pow(2).mean()
 
+        # Ya no necesitas aplicar una función a cada columna con `apply`
+        # La semivarianza total del portafolio se puede calcular como el promedio ponderado de la semivarianza de cada activo
+        objective_function = lambda w: np.dot(w, downside_risk)
 
-        # Calcular la semivarianza como la varianza de los rendimientos negativos respecto al benchmark
-        semi_variances = diff.apply(lambda x: downside_risk(x) ** 2)
-
-        # La función objetivo podría ser simplemente minimizar la semivarianza total del portafolio,
-        # o podrías incorporar otras consideraciones.
-        objective_function = lambda w: w @ semi_variances
 
         # Llama a optimization_model_selection con solo los argumentos requeridos
         result, optimization_model = self.optimization_model_selection(returns, objective_function)
