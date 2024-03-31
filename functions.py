@@ -172,17 +172,8 @@ class QAA:
             covariance_matrix = returns.cov()
             correlation_matrix = returns.corr()
             
-            # Separar los retornos del benchmark de los retornos de los activos
-            benchmark_returns = returns[self.benchmark]
-            asset_returns = returns.drop(columns=[self.benchmark])
-            
-            # Calcular el riesgo a la baja
-            diff = asset_returns.subtract(benchmark_returns, axis=0)
-            diff_neg = diff.copy()
-            diff_neg[diff_neg > 0] = 0
-            downside_risk = diff_neg.std()
-
-            return data, returns, volatility, variance, covariance_matrix, correlation_matrix, downside_risk, benchmark_returns
+        
+            return data, returns, volatility, variance, covariance_matrix, correlation_matrix,
         
         except yf.exceptions.YFinanceError as e:
             raise ValueError(f"Error in data retrieval: {str(e)}")
@@ -639,17 +630,16 @@ class QAA:
         # Separar el benchmark del resto de los activos
         benchmark_returns = returns[self.benchmark]
         asset_returns = returns.drop(columns=[self.benchmark])
-
-        # Calcular la diferencia de rendimientos con respecto al benchmark
-        differences = asset_returns.subtract(benchmark_returns, axis=0)
-
+        
         # Calcular el riesgo a la baja
-        def downside_risk(differences):
-            negative_differences = differences[differences < 0]
-            return np.sqrt((negative_differences ** 2).mean())
+        diff = asset_returns.subtract(benchmark_returns, axis=0)
+        diff_neg = diff.copy()
+        diff_neg[diff_neg > 0] = 0
+        downside_risk = diff_neg.std()
+
 
         # Calcular la semivarianza como la varianza de los rendimientos negativos respecto al benchmark
-        semi_variances = differences.apply(lambda x: downside_risk(x) ** 2)
+        semi_variances = diff.apply(lambda x: downside_risk(x) ** 2)
 
         # La función objetivo podría ser simplemente minimizar la semivarianza total del portafolio,
         # o podrías incorporar otras consideraciones.
