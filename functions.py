@@ -639,40 +639,37 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
         try:
-            # Separar el benchmark del resto de los activos
+            # Separate the benchmark returns from the asset returns
             benchmark_returns = returns[self.benchmark]
             asset_returns = returns.drop(columns=[self.benchmark])
 
-            # Calcular el riesgo a la baja dentro de este método
+            # Calculate downside risk within this method
             diff = asset_returns.subtract(benchmark_returns, axis=0)
-            diff_neg = diff.copy()
-            diff_neg[diff_neg > 0] = 0
+            diff_neg = diff[diff < 0]  # Only negative differences
             downside_risk = diff_neg.std()
 
-            # Calcular la matriz de semivarianza
-            downside_risk_df = downside_risk.to_frame()
-            downside_risk_transposed = downside_risk_df.T
-            mmult = np.dot(downside_risk_df, downside_risk_transposed)
-            correlacion = asset_returns.corr()
-            semi_var_matrix = (mmult * correlacion) * 100
+            # Calculate the semivariance matrix
+            semi_var_matrix = downside_risk ** 2
+            semi_var_matrix = pd.DataFrame(np.outer(semi_var_matrix, semi_var_matrix), 
+                                        index=self.tickers, columns=self.tickers) * asset_returns.corr()
 
-            # Definir la función objetivo para minimizar la semivarianza total del portafolio
+            # Define the objective function for semivariance minimization
             objective_function = lambda w: np.dot(w.T, np.dot(semi_var_matrix, w))
 
-            # Integrar con el método de selección del modelo de optimización
-            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
+            # Call optimization model selection with required arguments
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
-            # Verificar si la optimización fue exitosa
-            if not result.success:
+            # Verify if the optimization was successful
+            if not result.get('success', False):
                 raise Exception('Optimization failed:', result.message)
 
-            # Extraer los pesos óptimos del resultado
+            # Extract optimal weights from the result
             self.optimal_weights = result.x
 
-            # Crear una serie de pandas para los pesos óptimos
+            # Create a pandas Series for optimal weights
             weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
 
-            # Mostrar los pesos óptimos
+            # Display optimal weights
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} using {optimization_model} optimization:")
             print(weights_series)
             return weights_series
