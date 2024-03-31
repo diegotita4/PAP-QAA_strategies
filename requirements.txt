@@ -23,8 +23,10 @@ PATH 2: Visual Studio:
 4-. Install the libraries from the file using python -m pip install -r requirements.txt.
 """
 
-numpy >= 1.24.3
+numpy >= 1.26.4
+pandas >= 2.2.0
+scipy >= 1.11.4
+datetime >= 5.5
 yfinance >= 0.2.36
-scipy >= 1.11.1
-pandas >= 2.0.3
-matplotlib >= 3.7.2
+matplotlib >= 3.8.3
+pyportfolioopt >= 1.5.5

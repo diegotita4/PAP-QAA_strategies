@@ -36,11 +36,12 @@ class QAA:
     - portfolio_metrics(self, returns): Calculates and displays the performance and volatility of the portfolio compared to the benchmark.
     - fixed_parameters(self, returns): Preprocesses and sets fixed parameters for optimization.
     - QAA_strategy_selection(self, returns): Executes the selected QAA strategy based on the configuration in QAA_instance.
-    - optimization_model_selection(self, returns, objective_function, gradient_function): Executes the selected QAA strategy based on the configuration in QAA_instance.
+    - optimization_model_selection(self, returns, objective_function): Executes the selected QAA strategy based on the configuration in QAA_instance.
 
     - SLSQP(self, returns, objective_function): Optimizes the objective function using the SLSQP method.
     - montecarlo(self, returns, objective_function): Optimizes the objective function using the Montecarlo method.
-    - gradient_descent(self, returns, objective_function, gradient_function): Optimizes the objective function using Gradient Descent.
+    - COBYLA(self, returns, objective_function): Optimizes the objective function using the COBYLA method.
+    - PSO(self, returns, objective_function): Optimizes the objective function using the PSO method.
 
     - min_variance(self, returns): Calculates the portfolio with the minimum variance using the specified optimization model.
     - max_sharpe_ratio(self, returns): Calculates the portfolio with the maximum Sharpe Ratio using the specified optimization model.
@@ -50,18 +51,18 @@ class QAA:
     - black_litterman(self, returns): Calculates the portfolio with the Black Litterman using the specified optimization model.
     - HRP(self, returns): Calculates the portfolio weights using the HRP (Hierarchical Risk Parity) approach.
     - roy_safety_first_ratio(self, returns): Calculates the portfolio with the maximum Roy Safety First Ratio using the specified optimization model.
-    - martingale(self, returns): Martingale strategy for asset allocation.
-    - 
-    - 
+    - martingale(self, returns): Calculates the portfolio with the Martingale strategy for asset allocation.
+    - ten(self, returns): Calculates the portfolio with the ten strategy for asset allocation.
+    - eleven(self, returns): Calculates the portfolio with the eleven eleven strategy for asset allocation.
     """
 
     # FORMAT VARIABLES
     TAU = 0.025
-    TOLERANCE = 1e-8
+    TOLERANCE = 1e-2
     DAYS_IN_YEAR = 252
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.30
     DATE_FORMAT = "%Y-%m-%d"
-    NUMBER_OF_SIMULATIONS = 10000
+    NUMBER_OF_SIMULATIONS = 30000
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -79,7 +80,7 @@ class QAA:
         - higher_bound (float): Upper limit for asset weights.
         - start_date (str): Start date in 'YYYY-MM-DD' format.
         - end_date (str): End date in 'YYYY-MM-DD' format.
-        - optimization_model (str): Optimization model to use ("SLSQP", "MONTECARLO", OR "GRADIENT DESCENT").
+        - optimization_model (str): Optimization model to use ("SLSQP", "MONTECARLO", OR "COBYLA").
         - QAA_strategy (str): QAA strategy to apply ("MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE",
                                                      "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FISRT RATIO",
                                                      "MARTINGALE", "", or "").
@@ -115,18 +116,18 @@ class QAA:
             raise ValueError("Bounds must be between 0 and 1.")
 
         # Validate optimization model
-        if optimization_model not in ["SLSQP", "MONTECARLO", "GRADIENT DESCENT"]:
+        if optimization_model not in ["SLSQP", "MONTECARLO", "COBYLA", "PSO"]:
             raise ValueError("Invalid optimization model.")
 
         # Validate QAA strategy
-        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FIRST RATIO", "MARTINGALE"]:#, "", ""]:
+        if QAA_strategy not in ["MIN VARIANCE", "MAX SHARPE RATIO", "OMEGA", "SEMIVARIANCE", "SORTINO RATIO", "BLACK LITTERMAN", "HRP", "ROY SAFETY FIRST RATIO", "MARTINGALE"]:#, "ten", "eleven"]:
             raise ValueError("Invalid QAA strategy.")
 
         # Set default values
         self.expected_returns = expected_returns if expected_returns is not None else np.array([0.1] * len(tickers))
         self.opinions = opinions if opinions is not None else np.zeros((len(expected_returns), len(tickers)))
         self.MAR = MAR if MAR is not None else 0.2
-
+        
         # Assign parameters
         self.tickers = tickers
         self.benchmark = benchmark
@@ -135,6 +136,7 @@ class QAA:
         self.higher_bound = higher_bound
         self.optimization_model = optimization_model
         self.QAA_strategy = QAA_strategy
+        self.tickers = tickers
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -269,7 +271,12 @@ class QAA:
             # Set initial weights, bounds, and constraints
             weights = np.ones(num_assets) / num_assets
             bounds = np.array([(self.lower_bound, self.higher_bound)] * num_assets)
-            constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
+            
+            if self.optimization_model == "COBYLA":
+                constraints = [{"type": "ineq", "fun": lambda w: np.sum(w) - 1}]
+            else:
+                constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
+
             return weights, bounds, constraints
 
         except ValueError as ve:
@@ -318,11 +325,11 @@ class QAA:
             elif self.QAA_strategy == "MARTINGALE":
                 return self.martingale(returns)
 
-            #elif self.QAA_strategy == "":
-                #return self.(returns)
+            #elif self.QAA_strategy == "ten":
+                #return self.ten(returns)
 
-            #elif self.QAA_strategy == "":
-                #return self.(returns)
+            #elif self.QAA_strategy == "eleven":
+                #return self.eleven(returns)
 
             else:
                 raise ValueError(f"QAA Strategy '{self.QAA_strategy}' not recognized. Please choose a valid strategy.")
@@ -333,14 +340,13 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # OPTIMIZATION MODEL SELECTION
-    def optimization_model_selection(self, returns, objective_function, gradient_function):
+    def optimization_model_selection(self, returns, objective_function):
         """
         Executes the selected optimization model based on the configuration in QAA_instance.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
         - objective_function (function): Objective function to optimize.
-        - gradient_function (function): Gradient function of the objective function.
 
         Returns:
         - result (scipy.optimize.OptimizeResult): Optimization result.
@@ -357,9 +363,13 @@ class QAA:
                 result = self.montecarlo(returns, objective_function)
                 optimization_model = "MONTECARLO"
 
-            elif self.optimization_model == "GRADIENT DESCENT":
-                result = self.gradient_descent(returns, objective_function, gradient_function)
-                optimization_model = "GRADIENT DESCENT"
+            elif self.optimization_model == "COBYLA":
+                result = self.COBYLA(returns, objective_function)
+                optimization_model = "COBYLA"
+
+            elif self.optimization_model == "PSO":
+                result = self.PSO(returns, objective_function)
+                optimization_model = "PSO"
 
             else:
                 raise ValueError(f"Invalid optimization model: {self.optimization_model}")
@@ -420,13 +430,12 @@ class QAA:
             for _ in range(self.NUMBER_OF_SIMULATIONS):
                 random_weights = np.random.uniform(bounds[:, 0], bounds[:, 1])
                 random_weights /= np.sum(random_weights)
-
-                # Optimize with random weights and store results
-                result = minimize(objective_function, random_weights, constraints=constraints, bounds=bounds)
-                all_results.append(result)
+                
+                obj = objective_function(random_weights)
+                all_results.append({"fun": obj, "x": random_weights})
 
             # Select the best result based on the objective function value
-            best_result = min(all_results, key=lambda x: x.fun)
+            best_result = min(all_results, key=lambda x: x["fun"])
             return best_result
 
         except Exception as e:
@@ -434,15 +443,14 @@ class QAA:
 
 # ----------------------------------------------------------------------------------------------------
 
-    # 3RD OPTIMIZE MODEL: "GRADIENT DESCENT"
-    def gradient_descent(self, returns, objective_function, gradient_function):
+    # 3RD OPTIMIZE MODEL: "COBYLA"
+    def COBYLA(self, returns, objective_function):
         """
-        Optimizes the objective function using Gradient Descent.
+        Optimizes the objective function using the COBYLA model.
 
         Parameters:
         - returns (pd.DataFrame): Processed returns after removing the benchmark.
         - objective_function (function): Objective function to optimize.
-        - gradient_function (function): Gradient function of the objective function.
 
         Returns:
         - result (scipy.optimize.OptimizeResult): Optimization result.
@@ -451,47 +459,39 @@ class QAA:
         # Get initial weights, bounds, and constraints
         weights, bounds, constraints = self.fixed_parameters(returns)
 
-        iteration = 0
+        try:
+            # Minimize the objective function using SLSQP model
+            result = minimize(objective_function, weights, method="COBYLA", bounds=bounds, constraints=constraints)
+            return result
 
-        # Perform gradient descent iterations
-        while iteration < self.NUMBER_OF_SIMULATIONS:
-            try:
-                # Calculate gradient and update weights
-                gradient = gradient_function(weights)
+        except Exception as e:
+            raise ValueError(f"Error in SLSQP optimization: {str(e)}")
 
-                #Check it to be a numpy array, it doesn´t work with anything else
-                gradient = gradient.values if isinstance(gradient,pd.Series) else gradient
-                new_weights = weights - self.LEARNING_RATE * gradient
+# ----------------------------------------------------------------------------------------------------
 
-                # Clip weights to the specified bounds
-                new_weights = np.clip(new_weights, bounds[:, 0], bounds[:, 1])
+    # 4TH OPTIMIZE MODEL: "PSO"
+    def PSO(self, returns, objective_function):
+        """
+        Optimizes the objective function using the PSO model.
 
-                # Apply constraints
-                if constraints:
-                    for constraint in constraints:
-                        if "fun" in constraint:
-                            constraint_value = constraint["fun"](new_weights)
-                            if not np.isclose(constraint_value, 0.0, atol=self.TOLERANCE):
-                                constraint_jac = constraint.get("jac", 0)
-                                if np.linalg.norm(constraint_jac) > 0:
-                                    new_weights -= constraint_value * constraint_jac / np.dot(constraint_jac, constraint_jac)
+        Parameters:
+        - returns (pd.DataFrame): Processed returns after removing the benchmark.
+        - objective_function (function): Objective function to optimize.
 
-                # Normalize weights to ensure they sum to 1
-                new_weights /= np.sum(new_weights)
+        Returns:
+        - result (scipy.optimize.OptimizeResult): Optimization result.
+        """
 
-                # Check convergence
-                if np.linalg.norm(new_weights - weights) < self.TOLERANCE:
-                    break
+        # Get initial weights, bounds, and constraints
+        weights, bounds, constraints = self.fixed_parameters(returns)
 
-                weights = new_weights
-                iteration += 1
+        try:
+            # Minimize the objective function using PSO model
+            
+            return result
 
-            except Exception as e:
-                raise ValueError(f"Error in gradient descent optimization: {str(e)}")
-
-        # Prepare and return optimization result
-        result = {"x": weights, "fun": objective_function(weights), "nit": iteration, "success": iteration < self.NUMBER_OF_SIMULATIONS}
-        return result
+        except Exception as e:
+            raise ValueError(f"Error in SLSQP optimization: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -511,12 +511,11 @@ class QAA:
             # Drop the benchmark column from returns
             returns = returns.drop(columns=[self.benchmark])
 
-            # Define the objective function and gradient function
+            # Define the objective function
             objective_function = lambda w: np.dot(w.T, np.dot(returns.cov(), w))
-            gradient_function = lambda w: 2 * np.dot(returns.cov(), w)
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -550,12 +549,11 @@ class QAA:
             # Drop the benchmark column from returns
             returns = returns.drop(columns=[self.benchmark])
 
-            # Define the objective function and gradient function for Sharpe Ratio
-            objective_function = lambda w: -((np.dot(returns.mean(), w) - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))))
-            gradient_function = lambda w: -((returns.mean() * self.DAYS_IN_YEAR - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w)))) * ((returns.cov() * self.DAYS_IN_YEAR) @ w) / (np.power(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w)), 1.5) * np.sqrt(np.dot(w.T, np.dot(returns.cov() * self.DAYS_IN_YEAR, w))))
+            # Define the objective function for Sharpe Ratio
+            objective_function = lambda w: -((np.dot(returns.mean(), w) - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))))    
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -576,7 +574,7 @@ class QAA:
     # 3RD QAA STRATEGY: "OMEGA"
     def omega(self, returns):
         """
-        Calculates the portfolio with the maximum OMEGA using the specified optimization model.
+        Calculates the portfolio with the maximum Omega using the specified optimization model.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -585,51 +583,43 @@ class QAA:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
 
-        try:
-            # Drop the benchmark column from returns
-            returns = returns.drop(columns=[self.benchmark])
+        # Separar el benchmark del resto de los activos
+        benchmark_returns = returns[self.benchmark]
+        asset_returns = returns.drop(columns=[self.benchmark])
 
-            # Define the threshold return
-            threshold_return = self.rf / self.DAYS_IN_YEAR
+        # Calcular la diferencia de rendimientos con respecto al benchmark
+        differences = asset_returns.sub(benchmark_returns, axis=0)
 
-            # Define the objective function for OMEGA
-            def objective_function(weights):
-                portfolio_returns = np.dot(returns, weights)
-                excess_returns = portfolio_returns - threshold_return
+        def downside_risk(differences):
+            negative_differences = differences[differences < 0]
+            return np.sqrt(negative_differences.var() * self.DAYS_IN_YEAR)
 
-                upside_potential = np.sum(excess_returns[excess_returns > 0]) / len(excess_returns)
-                downside_risk = -np.sum(excess_returns[excess_returns < 0]) / len(excess_returns) if np.sum(excess_returns < 0) != 0 else 1
+        def upside_risk(differences):
+            positive_differences = differences[differences > 0]
+            return np.sqrt(positive_differences.var() * self.DAYS_IN_YEAR)
 
-                omega_ratio = upside_potential / downside_risk
-                return -omega_ratio
+        omegas = {ticker: upside_risk(differences[ticker]) / downside_risk(differences[ticker])
+                for ticker in self.tickers}
 
-            # Define the gradient function for OMEGA
-            def gradient_function(weights):
-                eps = 1e-8
-                grad = np.zeros(len(weights))
+        # Función objetivo para optimizar
+        def objective_function(weights):
+            portfolio_omega = sum(omegas[ticker] * weight for ticker, weight in zip(self.tickers, weights))
+            return -portfolio_omega  # Negativo porque queremos maximizar
 
-                for i in range(len(weights)):
-                    weights_p = np.array(weights)
-                    weights_p[i] += eps
-                    grad[i] = (objective_function(weights_p) - objective_function(weights)) / eps
-                return grad
+        # Integrar con el método de selección del modelo de optimización
+        result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
-            # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+        self.optimal_weights = result['x']  
 
-            # Extract optimal weights from the result
-            self.optimal_weights = result["x"]
+        # Ajusta el manejo de errores basado en un diccionario
+        if not result.get('success', False):
+            raise ValueError("La optimización no fue exitosa. " + result.get('message', ''))
 
-            # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
-
-            # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
-            print(weights_series)
-            return weights_series
-
-        except Exception as e:
-            raise ValueError(f"Error in HRP strategy: {str(e)}")
+        # Crear y mostrar la serie de pesos óptimos
+        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+        print(f"\nOptimal Portfolio Weights for Omega QAA using {optimization_model} optimization:")
+        print(weights_series)
+        return weights_series
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -653,18 +643,13 @@ class QAA:
             diff_neg = returns.copy()
             diff_neg[diff_neg > 0] = 0
 
-            # Define the gradient function for Semivariance
-            def gradient_function(weights):
-                gradient = -1/2 * np.dot(diff_neg.cov(), weights) / np.sqrt(np.dot(weights.T, np.dot(diff_neg.cov(), weights)))
-                return gradient
-
             # Define the objective function for Semivariance
             def objective_function(weights):
                 semivariance = np.sqrt(np.dot(weights.T, np.dot(diff_neg.cov(), weights)))
                 return semivariance
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -707,11 +692,8 @@ class QAA:
             # Define the downside deviation function for Sortino Ratio
             downside_deviation = lambda w: np.sqrt(np.dot(w.T, np.dot(downside_returns.cov(), w)))
 
-            # Define the gradient function for Sortino Ratio
-            gradient_function = lambda w: -((returns.mean() - self.rf) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w)))) * (returns.cov() @ w) / np.sqrt(np.dot(w.T, np.dot(returns.cov(), w))) - (downside_returns.cov() @ w) / downside_deviation(w)
-
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -761,11 +743,8 @@ class QAA:
             # Define the objective function for Black Litterman
             objective_function = lambda weight: -post_mu.dot(weight) + 0.5 * self.TAU * weight.dot(post_cov).dot(weight)
 
-            # Define the gradient function for Black Litterman
-            gradient_function = lambda weight: -(post_mu + self.TAU * post_cov.dot(weight))
-
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -857,20 +836,8 @@ class QAA:
 
                 return portfolio_variance
 
-            # Define the gradient function for HRP
-            def gradient_function(weights):
-                grad = np.zeros(len(weights))
-
-                for items in clusters:
-                    cov = returns.cov().copy().loc[items, items]
-                    inv_cov = np.linalg.inv(cov)
-                    weights_cluster = weights[items]
-                    grad[items] = -2 * np.dot(cov, weights_cluster)
-
-                return grad
-
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -909,20 +876,8 @@ class QAA:
                 sigma_p = np.sqrt(np.dot(w.T, np.dot(returns.cov(), w)))
                 return -(E_rp - self.MAR) / sigma_p
 
-            def gradient_function(w):
-                mean_returns = returns.mean()
-                cov_matrix = returns.cov()
-                portfolio_return = np.dot(w, mean_returns)
-                portfolio_volatility = np.sqrt(np.dot(w.T, np.dot(cov_matrix, w)))
-
-                grad_expected_return = mean_returns
-                grad_volatility = np.dot(cov_matrix, w) / portfolio_volatility
-
-                gradient = -(grad_expected_return * portfolio_volatility - (portfolio_return - self.MAR) * grad_volatility) / (portfolio_volatility ** 2)
-                return gradient
-
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -943,7 +898,8 @@ class QAA:
     # 9TH QAA STRATEGY: "MARTINGALE"
     def martingale(self, returns):
         """
-        Martingale strategy for asset allocation.
+        Adjusts portfolio weights based on past performance, inspired by the Martingale strategy.
+        This function calculates the optimal portfolio weights using a specified optimization model, focusing on maximizing returns based on past performance.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets.
@@ -951,42 +907,36 @@ class QAA:
         Returns:
         - weights_series (pd.Series): Optimal weights of the portfolio.
         """
-
         try:
-            # Drop benchmark column if present
-            returns = returns.drop(columns=[self.benchmark])
+            # Drop the benchmark column from returns
+            returns = returns.drop(columns=[self.benchmark], errors='ignore')
 
-            def martingale_objective_function(weights, returns):
-                portfolio_return = np.sum(returns.mean() * weights)
-                return -portfolio_return
-            
-            def martingale_gradient_function(weights, returns):
-                mean_returns = returns.mean()
-                gradient = -mean_returns
-                return gradient
+            # Calculate past performance indicator (e.g., mean return)
+            performance_indicator = returns.mean()
 
-            # Define the objective function for Martingale
-            objective_function = lambda w: martingale_objective_function(w, returns)
-
-            # Define the gradient function for Martingale
-            gradient_function = lambda w: martingale_gradient_function(w, returns)
+            def objective_function(weights):
+                return -np.dot(weights, performance_indicator)
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
+
+            # Check if the optimization was successful
+            if not result.get("success", False):
+                raise Exception('Optimization failed.')
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
 
             # Create a pandas Series for optimal weights
-            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+            weights_series = pd.Series(self.optimal_weights, index=returns.columns, name="Optimal Weights")
 
             # Display optimal weights
-            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(f"\nOptimal Portfolio Weights for Martingale-inspired QAA using {optimization_model} optimization:")
             print(weights_series)
-            return weights_series
 
+            return weights_series
         except Exception as e:
-            raise ValueError(f"Error in HRP strategy: {str(e)}")
+            raise ValueError(f"Error in Martingale-inspired strategy: {str(e)}")
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -1008,12 +958,11 @@ class QAA:
 
 
 
-            # Define the objective function and gradient function
-            objective_function = a
-            gradient_function = a
+            # Define the objective function
+            objective_function = 3
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
@@ -1049,12 +998,11 @@ class QAA:
 
 
 
-            # Define the objective function and gradient function
-            objective_function = a
-            gradient_function = a
+            # Define the objective function
+            objective_function = 3
 
             # Get the optimization result using the selected method
-            result, optimization_model = self.optimization_model_selection(returns, objective_function, gradient_function)
+            result, optimization_model = self.optimization_model_selection(returns, objective_function)
 
             # Extract optimal weights from the result
             self.optimal_weights = result["x"]
