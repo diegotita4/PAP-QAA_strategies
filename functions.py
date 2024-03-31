@@ -626,9 +626,11 @@ class QAA:
 # ----------------------------------------------------------------------------------------------------
 
     # 4TH QAA STRATEGY: "SEMIVARIANCE"
+
     def semivariance(self, returns):
         """
-        Adjusts the semivariance function to focus on the assets only and calculates downside risk.
+        Adjusts the semivariance function to correctly use correlations
+        without including the benchmark, focusing on the assets only.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets, including the benchmark.
@@ -640,29 +642,33 @@ class QAA:
             # Separar el benchmark del resto de los activos
             benchmark_returns = returns[self.benchmark]
             asset_returns = returns.drop(columns=[self.benchmark])
-            
-            # Calcular el riesgo a la baja para cada activo con respecto al benchmark
-            diff = asset_returns.subtract(benchmark_returns, axis=0)
-            diff_neg = diff[diff < 0]  # Mantener solo los retornos negativos
-            downside_risk = diff_neg.std()  # Calcular la desviación estándar de los retornos negativos
 
-            # Asegurarse de que downside_risk es una Serie y tiene la longitud correcta (número de activos)
-            if not isinstance(downside_risk, pd.Series) or len(downside_risk) != len(asset_returns.columns):
-                raise ValueError("downside_risk calculation error: length mismatch.")
-            
-            # Definir la función objetivo para la optimización, minimizando la semivarianza
-            objective_function = lambda w: np.dot(w, downside_risk.values) ** 2
-            
+            # Calcular el riesgo a la baja dentro de este método
+            diff = asset_returns.subtract(benchmark_returns, axis=0)
+            diff_neg = diff.copy()
+            diff_neg[diff_neg > 0] = 0
+            downside_risk = diff_neg.std()
+
+            # Calcular la matriz de semivarianza
+            downside_risk_df = downside_risk.to_frame()
+            downside_risk_transposed = downside_risk_df.T
+            mmult = np.dot(downside_risk_df, downside_risk_transposed)
+            correlacion = asset_returns.corr()
+            semi_var_matrix = (mmult * correlacion) * 100
+
+            # Definir la función objetivo para minimizar la semivarianza total del portafolio
+            objective_function = lambda w: np.dot(w.T, np.dot(semi_var_matrix, w))
+
             # Obtener los pesos iniciales, límites y restricciones
             weights, bounds, constraints = self.fixed_parameters(asset_returns)
-            
-            # Ejecutar la optimización
+
+            # Ejecutar la optimización utilizando SLSQP
             result = minimize(objective_function, weights, method='SLSQP', bounds=bounds, constraints=constraints)
-            
-            # Verificar el éxito de la optimización
+
+            # Verificar si la optimización fue exitosa
             if not result.success:
-                raise Exception("Optimization failed:", result.message)
-            
+                raise Exception('Optimization failed:', result.message)
+
             # Extraer los pesos óptimos del resultado
             self.optimal_weights = result.x
 
