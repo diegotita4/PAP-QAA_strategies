@@ -631,31 +631,28 @@ class QAA:
         benchmark_returns = returns[self.benchmark]
         asset_returns = returns.drop(columns=[self.benchmark])
         
-        # Calcular el riesgo a la baja
-        diff = asset_returns.subtract(benchmark_returns, axis=0)
-        diff_neg = diff.copy()
-        diff_neg[diff_neg > 0] = 0
-        # Calcular el riesgo a la baja correctamente
-        downside_risk = diff_neg.pow(2).mean()
+        # Calcular el riesgo a la baja como la desviación estándar de los retornos negativos
+        downside_risk = asset_returns.sub(benchmark_returns, axis=0)
+        downside_risk[downside_risk > 0] = 0  # Solo considerar rendimientos por debajo de 0
+        semi_variances = downside_risk.var()  # Varianza de los rendimientos negativos para cada activo
 
-        # Ya no necesitas aplicar una función a cada columna con `apply`
-        # La semivarianza total del portafolio se puede calcular como el promedio ponderado de la semivarianza de cada activo
-        objective_function = lambda w: np.dot(w, downside_risk)
-
+        # Definir la función objetivo para minimizar la semivarianza total del portafolio
+        objective_function = lambda w: np.dot(w.T, np.dot(semi_variances.values, w))  # Asegúrate de que semi_variances sea un array
 
         # Llama a optimization_model_selection con solo los argumentos requeridos
-        result, optimization_model = self.optimization_model_selection(returns, objective_function)
+        result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
-        # Extract optimal weights from the result
+        # Extraer los pesos óptimos del resultado
         self.optimal_weights = result.x
 
-        # Create a pandas Series for optimal weights
+        # Crear una pandas Series para los pesos óptimos
         weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
 
-        # Display optimal weights
+        # Mostrar los pesos óptimos
         print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
         print(weights_series)
         return weights_series
+
 # ----------------------------------------------------------------------------------------------------
 
     # 5TH QAA STRATEGY: "SORTINO RATIO"
