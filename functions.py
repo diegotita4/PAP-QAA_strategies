@@ -487,7 +487,7 @@ class QAA:
 
         try:
             # Minimize the objective function using PSO model
-            
+            result = 1
             return result
 
         except Exception as e:
