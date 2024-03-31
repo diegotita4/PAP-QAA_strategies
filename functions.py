@@ -627,35 +627,47 @@ class QAA:
 
     # 4TH QAA STRATEGY: "SEMIVARIANCE"
     def semivariance(self, returns):
-        # Separar el benchmark del resto de los activos
-        benchmark_returns = returns[self.benchmark]
-        asset_returns = returns.drop(columns=[self.benchmark])
-        
-        # Calcular la diferencia de rendimientos con respecto al benchmark y filtrar los rendimientos positivos
-        diff_neg = asset_returns.subtract(benchmark_returns, axis=0)
-        diff_neg[diff_neg > 0] = 0
-        
-        # Calcular el riesgo a la baja como la varianza de los rendimientos negativos (esto ya produce una serie para cada activo)
-        downside_risk = diff_neg.pow(2).mean()
+        """
+        Adjusts the semivariance function to correctly use correlations
+        without including the benchmark, focusing on the assets only.
 
-        # Definir la función objetivo que minimice la semivarianza total del portafolio
-        objective_function = lambda w: np.dot(w, downside_risk)
+        Parameters:
+        - returns (pd.DataFrame): Historical returns of the assets, including the benchmark.
 
+        Returns:
+        - weights_series (pd.Series): Optimal weights of the portfolio.
+        """
+        try:
+            # Separar el benchmark del resto de los activos
+            benchmark_returns = returns[self.benchmark]
+            asset_returns = returns.drop(columns=[self.benchmark])
 
+            # Calcular el riesgo a la baja dentro de este método
+            diff = asset_returns.subtract(benchmark_returns, axis=0)
+            diff_neg = diff[diff < 0]  # Solo conservar rendimientos negativos
+            downside_risk = diff_neg.pow(2).mean()  # Semivarianza por activo
 
-        # Llama a optimization_model_selection con solo los argumentos requeridos
-        result, optimization_model = self.optimization_model_selection(returns, objective_function)
+            # La semivarianza total del portafolio se puede calcular como el promedio ponderado
+            # de la semivarianza de cada activo, pero es más común minimizar directamente este valor
+            objective_function = lambda w: np.dot(w, downside_risk)
 
-        # Extract optimal weights from the result
-        self.optimal_weights = result.x
+            # Llama a optimization_model_selection con solo los argumentos requeridos
+            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
-        # Create a pandas Series for optimal weights
-        weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+            # Extraer los pesos óptimos del resultado
+            self.optimal_weights = result.x
 
-        # Display optimal weights
-        print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
-        print(weights_series)
-        return weights_series
+            # Crear una serie de pandas para los pesos óptimos
+            weights_series = pd.Series(self.optimal_weights, index=self.tickers, name="Optimal Weights")
+
+            # Mostrar los pesos óptimos
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} QAA using {optimization_model} optimization:")
+            print(weights_series)
+            return weights_series
+
+        except Exception as e:
+            raise ValueError(f"Error in Semivariance strategy: {str(e)}")
+
 # ----------------------------------------------------------------------------------------------------
 
     # 5TH QAA STRATEGY: "SORTINO RATIO"
