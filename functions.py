@@ -659,11 +659,8 @@ class QAA:
             # Definir la función objetivo para minimizar la semivarianza total del portafolio
             objective_function = lambda w: np.dot(w.T, np.dot(semi_var_matrix, w))
 
-            # Obtener los pesos iniciales, límites y restricciones
-            weights, bounds, constraints = self.fixed_parameters(asset_returns)
-
-            # Ejecutar la optimización utilizando SLSQP
-            result = minimize(objective_function, weights, method='SLSQP', bounds=bounds, constraints=constraints)
+            # Integrar con el método de selección del modelo de optimización
+            result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
             # Verificar si la optimización fue exitosa
             if not result.success:
@@ -676,7 +673,7 @@ class QAA:
             weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
 
             # Mostrar los pesos óptimos
-            print(f"\nOptimal Portfolio Weights for SEMIVARIANCE QAA using SLSQP optimization:")
+            print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} using {optimization_model} optimization:")
             print(weights_series)
             return weights_series
 
