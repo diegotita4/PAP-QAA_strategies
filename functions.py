@@ -662,20 +662,17 @@ class QAA:
             # Integrar con el método de selección del modelo de optimización
             result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
-            # Check the optimization result based on the type of optimization model used
-            if optimization_model == "MONTECARLO":
-                if not isinstance(result, dict) or "fun" not in result or "x" not in result:
-                    raise Exception('Optimization failed: Invalid result format from Monte Carlo.')
-                optimal_weights = result["x"]
-            else:
-                if not result.success:
-                    raise Exception('Optimization failed:', result.message)
-                optimal_weights = result.x
+            # Verificar si la optimización fue exitosa
+            if not result.success:
+                raise Exception('Optimization failed:', result.message)
 
-            # Create a pandas Series for optimal weights
-            weights_series = pd.Series(optimal_weights, index=asset_returns.columns, name="Optimal Weights")
+            # Extraer los pesos óptimos del resultado
+            self.optimal_weights = result.x
 
-            # Display optimal weights
+            # Crear una serie de pandas para los pesos óptimos
+            weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
+
+            # Mostrar los pesos óptimos
             print(f"\nOptimal Portfolio Weights for {self.QAA_strategy} using {optimization_model} optimization:")
             print(weights_series)
             return weights_series
