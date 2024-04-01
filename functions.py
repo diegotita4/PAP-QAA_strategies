@@ -631,7 +631,6 @@ class QAA:
         """
         Adjusts the semivariance function to correctly use correlations
         without including the benchmark, focusing on the assets only.
-        This version calculates downside risk internally.
 
         Parameters:
         - returns (pd.DataFrame): Historical returns of the assets, including the benchmark.
@@ -645,12 +644,17 @@ class QAA:
             asset_returns = returns.drop(columns=[self.benchmark])
 
             # Calcular el riesgo a la baja dentro de este método
-            differences = asset_returns.subtract(benchmark_returns, axis=0)
-            negative_differences = differences.where(differences < 0, 0)
-            downside_risk = negative_differences.std()
+            diff = asset_returns.subtract(benchmark_returns, axis=0)
+            diff_neg = diff.copy()
+            diff_neg[diff_neg > 0] = 0
+            downside_risk = diff_neg.std()
 
             # Calcular la matriz de semivarianza
-            semi_var_matrix = np.square(downside_risk) * asset_returns.corr()
+            downside_risk_df = downside_risk.to_frame()
+            downside_risk_transposed = downside_risk_df.T
+            mmult = np.dot(downside_risk_df, downside_risk_transposed)
+            correlacion = asset_returns.corr()
+            semi_var_matrix = (mmult * correlacion) * 100
 
             # Definir la función objetivo para minimizar la semivarianza total del portafolio
             objective_function = lambda w: np.dot(w.T, np.dot(semi_var_matrix, w))
@@ -659,14 +663,11 @@ class QAA:
             result, optimization_model = self.optimization_model_selection(asset_returns, objective_function)
 
             # Verificar si la optimización fue exitosa
-            if isinstance(result, dict):
-                if 'success' not in result or not result['success']:
-                    raise Exception('Optimization failed')
-                self.optimal_weights = result['x']
-            else:
-                if not result.success:
-                    raise Exception('Optimization failed:', result.message)
-                self.optimal_weights = result.x
+            if not result.success:
+                raise Exception('Optimization failed:', result.message)
+
+            # Extraer los pesos óptimos del resultado
+            self.optimal_weights = result.x
 
             # Crear una serie de pandas para los pesos óptimos
             weights_series = pd.Series(self.optimal_weights, index=asset_returns.columns, name="Optimal Weights")
@@ -678,7 +679,6 @@ class QAA:
 
         except Exception as e:
             raise ValueError(f"Error in Semivariance strategy: {str(e)}")
-
 
 # ----------------------------------------------------------------------------------------------------
 
