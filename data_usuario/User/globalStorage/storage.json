@@ -1,0 +1,61 @@
+{
+    "userDataProfilesMigration": true,
+    "profileAssociations": {
+        "workspaces": {
+            "file:///c%3A/Users/oscar/Documents/ITESO/Octavo%20Semestre%20Tieso/Backtesting%20AA/PAP": "__default__profile__"
+        },
+        "emptyWindows": {}
+    },
+    "profileAssociationsMigration": true,
+    "telemetry.sqmId": "{515A2E6F-A78F-4703-9666-833EDCFDF1D2}",
+    "telemetry.machineId": "bdbc8e19977092610082a887c37a07993e962125a6564eb2d595a46de0df848c",
+    "backupWorkspaces": {
+        "workspaces": [],
+        "folders": [
+            {
+                "folderUri": "file:///c%3A/Users/oscar/Documents/ITESO/Octavo%20Semestre%20Tieso/Backtesting%20AA/PAP"
+            }
+        ],
+        "emptyWindows": []
+    },
+    "windowControlHeight": 35,
+    "theme": "vs-dark",
+    "themeBackground": "#1f1f1f",
+    "windowSplash": {
+        "zoomLevel": 0,
+        "baseTheme": "vs-dark",
+        "colorInfo": {
+            "foreground": "#cccccc",
+            "background": "#1f1f1f",
+            "editorBackground": "#1f1f1f",
+            "titleBarBackground": "#181818",
+            "activityBarBackground": "#181818",
+            "sideBarBackground": "#181818",
+            "statusBarBackground": "#181818",
+            "statusBarNoFolderBackground": "#1f1f1f"
+        },
+        "layoutInfo": {
+            "sideBarSide": "left",
+            "editorPartMinWidth": 220,
+            "titleBarHeight": 35,
+            "activityBarWidth": 48,
+            "sideBarWidth": 256,
+            "statusBarHeight": 22,
+            "windowBorder": false
+        }
+    },
+    "windowsState": {
+        "lastActiveWindow": {
+            "folder": "file:///c%3A/Users/oscar/Documents/ITESO/Octavo%20Semestre%20Tieso/Backtesting%20AA/PAP",
+            "backupPath": "C:\\Users\\oscar\\Documents\\ITESO\\Octavo Semestre Tieso\\Backtesting AA\\PAP\\data_usuario\\Backups\\ee7f9de8ebec8ff23bc82d2226ebb00d",
+            "uiState": {
+                "mode": 0,
+                "x": 256,
+                "y": 48,
+                "width": 1024,
+                "height": 768
+            }
+        },
+        "openedWindows": []
+    }
+}

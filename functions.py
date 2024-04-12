@@ -1,4 +1,3 @@
-
 """
 # -- --------------------------------------------------------------------------------------------------- -- #
 # -- project: Quantitative Asset Allocation (QAA)                                                        -- #
@@ -26,6 +25,7 @@ import logging
 from pypfopt import EfficientFrontier, risk_models, expected_returns
 from pypfopt.efficient_frontier import EfficientCVaR
 import yfinance as yf
+import pandas_datareader.data as web
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 warnings.filterwarnings('ignore', message='A new study created in memory with name:')
 warnings.filterwarnings('ignore', message='Method COBYLA cannot handle bounds.')
@@ -42,22 +42,6 @@ warnings.filterwarnings('ignore', message='Method COBYLA cannot handle bounds.')
 # -- repository: https://github.com/diegotita4/PAP                                                       -- #
 # -- --------------------------------------------------------------------------------------------------- -- #
 """
-
-# ----------------------------------------------------------------------------------------------------
-
-# LIBRARIES / WARNINGS
-import yfinance as yf
-import numpy as np
-from scipy.optimize import minimize
-import optuna
-import warnings
-import logging
-from pypfopt import EfficientFrontier, risk_models, expected_returns
-from pypfopt.efficient_frontier import EfficientCVaR
-import yfinance as yf
-optuna.logging.set_verbosity(optuna.logging.WARNING)
-warnings.filterwarnings('ignore', message='A new study created in memory with name:')
-warnings.filterwarnings('ignore', message='Method COBYLA cannot handle bounds.')
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -80,7 +64,7 @@ class QAA:
     - optimization_model (str): Selected optimization model.
 
     Methods:
-    - __init__: Constructor of the OptimizedStrategy class.
+    - _init_: Constructor of the OptimizedStrategy class.
     - set_optimization_strategy: Sets the optimization strategy.
     - set_optimization_model: Sets the optimization model.
     - load_data: Loads historical data for the assets.
@@ -98,31 +82,32 @@ class QAA:
     """
 
     def __init__(self, tickers=None, benchmark_ticker='SPY', rf=None, lower_bound=0.10, higher_bound=0.99, start_date=None, end_date=None):
-            """
-            Initializes the QAA class.
+        """
+        Initializes the QAA class.
 
-            Parameters:
-            - tickers (list, optional): List of asset tickers.
-            - benchmark_ticker (str, optional): Ticker of the benchmark asset. Defaults to 'SPY'.
-            - rf (float, optional): Risk-free rate. Defaults to None.
-            - lower_bound (float, optional): Lower bound for asset weights. Defaults to 0.10.
-            - higher_bound (float, optional): Higher bound for asset weights. Defaults to 0.99.
-            - start_date (str, optional): Start date for data retrieval. Defaults to None.
-            - end_date (str, optional): End date for data retrieval. Defaults to None.
-            """
-            self.tickers = tickers
-            self.benchmark_ticker = benchmark_ticker
-            self.rf = rf
-            self.lower_bound = lower_bound
-            self.higher_bound = higher_bound
-            self.start_date = start_date
-            self.end_date = end_date
-            self.data, self.benchmark_data = self.load_data()
-            self.returns = self.calculate_returns()
-            self.benchmark_returns = self.calculate_benchmark_returns()
-            self.optimal_weights = None
-            self.optimization_strategy = None
-            self.optimization_model = None
+        Parameters:
+        - tickers (list, optional): List of asset tickers.
+        - benchmark_ticker (str, optional): Ticker of the benchmark asset. Defaults to 'SPY'.
+        - rf (float, optional): Risk-free rate. Defaults to None.
+        - lower_bound (float, optional): Lower bound for asset weights. Defaults to 0.10.
+        - higher_bound (float, optional): Higher bound for asset weights. Defaults to 0.99.
+        - start_date (str, optional): Start date for data retrieval. Defaults to None.
+        - end_date (str, optional): End date for data retrieval. Defaults to None.
+        """
+        self.tickers = tickers
+        self.benchmark_ticker = benchmark_ticker
+        self.rf = rf
+        self.lower_bound = lower_bound
+        self.higher_bound = higher_bound
+        self.start_date = start_date
+        self.end_date = end_date
+        self.data, self.benchmark_data = self.load_data()
+        self.returns = self.calculate_returns()
+        self.benchmark_returns = self.calculate_benchmark_returns()
+        self.optimal_weights = None
+        self.optimization_strategy = None
+        self.optimization_model = None
+        self.ff_data, self.ff_returns = self.load_ff_data()
 
     def calculate_benchmark_returns(self):
         """Calculates daily returns for the benchmark asset."""
@@ -147,6 +132,11 @@ class QAA:
         data = yf.download(tickers_with_benchmark, start=self.start_date, end=self.end_date)['Adj Close']
         benchmark_data = data.pop(self.benchmark_ticker) if self.benchmark_ticker in data else None
         return data, benchmark_data
+    
+    def load_ff_data(self):
+        ff_data = web.DataReader('F-F_Research_Data_Factors_daily', 'famafrench', start=self.start_date, end=self.end_date)[0]
+        ff_returns = ff_data[['Mkt-RF', 'SMB', 'HML']].loc[self.returns.index]
+        return ff_data, ff_returns
 
     def calculate_returns(self):
         """Calculates daily returns for the assets."""
@@ -190,6 +180,10 @@ class QAA:
             objective = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
              objective = self.roy_safety_first_ratio
+        elif self.optimization_strategy == 'Sortino Ratio':
+             objective = self.sortino_ratio
+        elif self.optimization_strategy == 'Fama French':
+             objective = self.fama_french
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -233,6 +227,10 @@ class QAA:
                 objective_value = self.martingale(weights) + penalty
             elif self.optimization_strategy == 'Roy Safety First Ratio':
                 objective_value = self.roy_safety_first_ratio(weights) + penalty
+            elif self.optimization_strategy == 'Sortino Ratio':  
+                objective_value = self.sortino_ratio(weights, self.rf) + penalty
+            elif self.optimization_strategy == 'Fama French':
+                objective_value = self.fama_french(weights) + penalty
             else:
                 raise ValueError("Invalid optimization strategy.")
 
@@ -265,6 +263,10 @@ class QAA:
             objective = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
             objective = self.roy_safety_first_ratio
+        elif self.optimization_strategy == 'Sortino Ratio':
+             objective = self.sortino_ratio
+        elif self.optimization_strategy == 'Fama French':
+            objective = self.fama_french
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -338,16 +340,34 @@ class QAA:
         expected_return = np.dot(self.returns.mean() * 252, weights)
         volatility = np.sqrt(np.dot(weights.T, np.dot(self.returns.cov() * 252, weights)))
         return -(expected_return - self.rf) / volatility
-    # ----------------------------------------------------------------------------------------------------  
 
     # ----------------------------------------------------------------------------------------------------  
 
-    # 6TH QAA STRATEGY: ""
+    # 6TH QAA STRATEGY: "SORTINO RATIO"
+    def sortino_ratio(self, weights, threshold=0.0):
+        """Strategy based on the Sortino Ratio."""
+        portfolio_return = np.dot(weights, self.returns.mean())
+        excess_returns = self.returns * 252 - self.rf
+        downside = excess_returns[excess_returns < 0]
+        dw = downside.multiply(weights, axis=1)
+        semivariance = np.mean(np.square(dw.sum(axis=1)))
+        sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
+        return -sortino_ratio
+
 
     # ----------------------------------------------------------------------------------------------------  
-
-    # 7TH QAA STRATEGY: ""
-
+    # 7TH QAA STRATEGY: "FAMA FRENCH"
+    def fama_french(self, weights):
+        """Optimizes the objective function using Fama-French factors."""
+        all_returns = pd.concat([self.returns, self.ff_returns], axis=1)
+        risk_free_rate = self.ff_data['RF'].mean()
+        ff_weights = np.append(weights, np.zeros(3))  
+        portfolio_returns = np.dot(all_returns, ff_weights)
+        ff_covariance = np.cov(all_returns.T)
+        portfolio_volatility = np.sqrt(np.dot(ff_weights.T, np.dot(ff_covariance, ff_weights)))
+        ff_ratio = (portfolio_returns.mean() * 252 - risk_free_rate) / portfolio_volatility
+        return -ff_ratio
+    
     # ---------------------------------------------------------------------------------------------------- 
 
     # 8TH QAA STRATEGY: ""
@@ -382,6 +402,10 @@ class QAA:
             self.objective_function = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
             self.objective_function = self.roy_safety_first_ratio
+        elif self.optimization_strategy == 'Sortino Ratio':
+             self.objective_function = self.sortino_ratio
+        elif self.optimization_strategy == 'Fama French':
+            self.objective_function = self.fama_french     
         else:
             raise ValueError("Invalid optimization strategy.")
 
