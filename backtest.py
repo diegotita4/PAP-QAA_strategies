@@ -6,7 +6,9 @@ from dateutil.relativedelta import relativedelta
 # pip install optuna
 import optuna
 import warnings
+from matplotlib.lines import Line2D
 import logging
+import matplotlib.pyplot as plt
 from functions import QAA
 
 
@@ -227,3 +229,52 @@ def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecu
                 break
     
     return pd.DataFrame(resultados)
+
+
+def plot_portfolio_value(resultados_backtesting, tickers):
+    # Prepare the dataframe with dynamic column names for each ticker
+    df_columns = ['fecha_fin'] + [f'acciones_{ticker}' for ticker in tickers] + ['cash_sobrante']
+    df = resultados_backtesting[df_columns].copy()
+    df['fecha_fin'] = pd.to_datetime(df['fecha_fin'])
+    df.set_index('fecha_fin', inplace=True)
+
+    # Generate a date range for the daily data
+    start_date = df.index.min()
+    end_date = df.index.max()
+    date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+
+    # Create a new dataframe with a record for each day, forward-filling the rebalancing information
+    daily_data = pd.DataFrame(index=date_range)
+    daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'fecha_fin'})
+
+    # Fetch historical stock data using yfinance for the entire range of daily_data
+    stock_data = yf.download(tickers, start=daily_data['fecha_fin'].min(), end=daily_data['fecha_fin'].max())
+    prices = stock_data['Adj Close']
+
+    # Update the index of daily_data to match the dates from the stock data
+    daily_data.set_index('fecha_fin', inplace=True)
+    daily_data = daily_data.reindex(prices.index).ffill()
+
+    # Calculate the daily portfolio value
+    portfolio_value = daily_data['cash_sobrante']
+    for ticker in tickers:
+        portfolio_value += daily_data[f'acciones_{ticker}'] * prices[ticker]
+
+    # Plot the portfolio value over time
+    plt.figure(figsize=(14, 7))
+    plt.plot(portfolio_value.index, portfolio_value, label='Portfolio Value', color='green')
+
+    # Add vertical lines for rebalance dates
+    for date in df.index:
+        plt.axvline(x=date, color='red', linestyle='--')
+
+    # Create custom legends
+    legend_elements = [Line2D([0], [0], color='green', lw=2, label='Portfolio Value'),
+                       Line2D([0], [0], color='red', linestyle='--', label='Rebalance Date')]
+    plt.legend(handles=legend_elements)
+
+    plt.title('Daily Portfolio Value Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Value in $')
+    plt.grid(True)
+    plt.show()
