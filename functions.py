@@ -352,22 +352,22 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
     # 6TH QAA STRATEGY: "SORTINO RATIO"
-    # def sortino_ratio(self, weights, threshold=0.0):
-    #     """Strategy based on the Sortino Ratio."""
-    #     portfolio_return = np.dot(weights, self.returns.mean())
-    #     excess_returns = self.returns * 252 - self.rf
-    #     downside = excess_returns[excess_returns < 0]
-    #     dw = downside.multiply(weights, axis=1)
-    #     semivariance = np.mean(np.square(dw.sum(axis=1)))
-    #     sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
-    #     return -sortino_ratio
+    def sortino_ratio(self, weights, threshold=0.0):
+        """Strategy based on the Sortino Ratio."""
+        portfolio_return = np.dot(weights, self.returns.mean())
+        excess_returns = self.returns * 252 - self.rf
+        downside = excess_returns[excess_returns < 0]
+        dw = downside.multiply(weights, axis=1)
+        semivariance = np.mean(np.square(dw.sum(axis=1)))
+        sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
+        return -sortino_ratio
 
-    def sortino_ratio(self, weights):
-        """Sortino ratio strategy."""
-        portfolio_returns = np.dot(self.returns, weights)
-        excess_returns = portfolio_returns - self.rf / 252
-        downside_deviation = np.sqrt(np.mean(np.minimum(excess_returns, 0) ** 2))
-        return -(np.mean(excess_returns) / downside_deviation if downside_deviation != 0 else np.inf)
+    # def sortino_ratio(self, weights):
+    #     """Sortino ratio strategy."""
+    #     portfolio_returns = np.dot(self.returns, weights)
+    #     excess_returns = portfolio_returns - self.rf / 252
+    #     downside_deviation = np.sqrt(np.mean(np.minimum(excess_returns, 0) ** 2))
+    #     return -(np.mean(excess_returns) / downside_deviation if downside_deviation != 0 else np.inf)
 
 
 
