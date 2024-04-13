@@ -322,7 +322,7 @@ class QAA:
         elif self.optimization_strategy == 'Fama French':
              objective = self.fama_french
         elif self.optimization_strategy == 'CVaR':
-            self.objective_function = self.cvar
+            objective = self.cvar
         elif self.optimization_strategy == 'HRP':
             hrp_instance = HierarchicalRiskParity(self.returns)
             hrp_weights = hrp_instance.optimize_hrp()
@@ -377,7 +377,7 @@ class QAA:
             elif self.optimization_strategy == 'Fama French':
                 objective_value = self.fama_french(weights) + penalty
             elif self.optimization_strategy == 'CVaR':
-                self.objective_function = self.cvar(weights) + penalty
+                objective_value = self.cvar(weights) + penalty
             elif self.optimization_strategy == 'Sharpe Ratio':
                 objective_value = self.sharpe_ratio(weights) + penalty
             elif self.optimization_strategy == 'Hierarchical Risk Parity':
@@ -422,7 +422,7 @@ class QAA:
         elif self.optimization_strategy == 'Fama French':
             objective = self.fama_french
         elif self.optimization_strategy == 'CVaR':
-            self.objective_function = self.cvar
+            objective = self.cvar
         elif self.optimization_strategy == 'Sharpe Ratio':
              objective = self.sharpe_ratio
         elif self.optimization_strategy == 'Hierarchical Risk Parity':
