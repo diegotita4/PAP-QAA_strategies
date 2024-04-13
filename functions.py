@@ -78,6 +78,8 @@ class QAA:
     - semivariance: Calculates the portfolio with the Semivariance.
     - martingale: Calculates the portfolio with the Martingale strategy.
     - roy_safety_first_ratio: Calculates the portfolio with the Roy Safety First Ratio.
+    - cvar: Calculates the portfolio with the CVaR (Conditional Value at Risk).
+    - sortino_ratio: Calculates the portfolio with the Sortino ratio.
     - optimize: Executes the selected optimization strategy and model.
     """
 
@@ -184,6 +186,8 @@ class QAA:
              objective = self.sortino_ratio
         elif self.optimization_strategy == 'Fama French':
              objective = self.fama_french
+        elif self.optimization_strategy == 'CVaR':
+            self.objective_function = self.cvar
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -231,6 +235,8 @@ class QAA:
                 objective_value = self.sortino_ratio(weights, self.rf) + penalty
             elif self.optimization_strategy == 'Fama French':
                 objective_value = self.fama_french(weights) + penalty
+            elif self.optimization_strategy == 'CVaR':
+                self.objective_function = self.cvar(weights) + penalty
             else:
                 raise ValueError("Invalid optimization strategy.")
 
@@ -267,6 +273,8 @@ class QAA:
              objective = self.sortino_ratio
         elif self.optimization_strategy == 'Fama French':
             objective = self.fama_french
+        elif self.optimization_strategy == 'CVaR':
+            self.objective_function = self.cvar
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -344,15 +352,23 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
     # 6TH QAA STRATEGY: "SORTINO RATIO"
-    def sortino_ratio(self, weights, threshold=0.0):
-        """Strategy based on the Sortino Ratio."""
-        portfolio_return = np.dot(weights, self.returns.mean())
-        excess_returns = self.returns * 252 - self.rf
-        downside = excess_returns[excess_returns < 0]
-        dw = downside.multiply(weights, axis=1)
-        semivariance = np.mean(np.square(dw.sum(axis=1)))
-        sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
-        return -sortino_ratio
+    # def sortino_ratio(self, weights, threshold=0.0):
+    #     """Strategy based on the Sortino Ratio."""
+    #     portfolio_return = np.dot(weights, self.returns.mean())
+    #     excess_returns = self.returns * 252 - self.rf
+    #     downside = excess_returns[excess_returns < 0]
+    #     dw = downside.multiply(weights, axis=1)
+    #     semivariance = np.mean(np.square(dw.sum(axis=1)))
+    #     sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
+    #     return -sortino_ratio
+
+    def sortino_ratio(self, weights):
+        """Sortino ratio strategy."""
+        portfolio_returns = np.dot(self.returns, weights)
+        excess_returns = portfolio_returns - self.rf / 252
+        downside_deviation = np.sqrt(np.mean(np.minimum(excess_returns, 0) ** 2))
+        return -(np.mean(excess_returns) / downside_deviation if downside_deviation != 0 else np.inf)
+
 
 
     # ----------------------------------------------------------------------------------------------------  
@@ -370,7 +386,13 @@ class QAA:
     
     # ---------------------------------------------------------------------------------------------------- 
 
-    # 8TH QAA STRATEGY: ""
+    # 8TH QAA STRATEGY: "CVAR"
+    def cvar(self, weights, alpha=0.05):
+        """CVaR (Conditional Value at Risk) strategy."""
+        portfolio_returns = np.dot(self.returns, weights)
+        VaR = np.percentile(portfolio_returns, alpha * 100)
+        CVaR = portfolio_returns[portfolio_returns <= VaR].mean()
+        return -CVaR  # Negative because we want to minimize CVaR
 
     # ----------------------------------------------------------------------------------------------------  
 
@@ -406,6 +428,8 @@ class QAA:
              self.objective_function = self.sortino_ratio
         elif self.optimization_strategy == 'Fama French':
             self.objective_function = self.fama_french     
+        elif self.optimization_strategy == 'CVaR':
+            self.objective_function = self.cvar
         else:
             raise ValueError("Invalid optimization strategy.")
 
