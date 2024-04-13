@@ -24,7 +24,6 @@ import warnings
 import logging
 from pypfopt import EfficientFrontier, risk_models, expected_returns
 from pypfopt.efficient_frontier import EfficientCVaR
-import yfinance as yf
 import pandas_datareader.data as web
 import seaborn as sns
 from scipy.cluster.hierarchy import dendrogram, linkage, leaves_list
@@ -33,6 +32,7 @@ from pypfopt.hierarchical_portfolio import HRPOpt
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 warnings.filterwarnings('ignore', message='A new study created in memory with name:')
 warnings.filterwarnings('ignore', message='Method COBYLA cannot handle bounds.')
+import empyrical # pip install empyrical
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -322,7 +322,7 @@ class QAA:
         elif self.optimization_strategy == 'Fama French':
              objective = self.fama_french
         elif self.optimization_strategy == 'CVaR':
-            objective = self.cvar
+            objective = lambda weights: self.cvar(weights, alpha=0.05)
         elif self.optimization_strategy == 'HRP':
             hrp_instance = HierarchicalRiskParity(self.returns)
             hrp_weights = hrp_instance.optimize_hrp()
@@ -377,7 +377,11 @@ class QAA:
             elif self.optimization_strategy == 'Fama French':
                 objective_value = self.fama_french(weights) + penalty
             elif self.optimization_strategy == 'CVaR':
-                objective_value = self.cvar(weights) + penalty
+                portfolio_returns = np.dot(self.returns, weights)
+                VaR = np.percentile(portfolio_returns, 100 * 0.05)
+                CVaR = np.mean(portfolio_returns[portfolio_returns <= VaR])
+                return -CVaR + penalty  # Minimize the negative CVaR (maximize CVaR)
+                # objective_value = -self.cvar(weights, alpha=0.05) + penalty
             elif self.optimization_strategy == 'Sharpe Ratio':
                 objective_value = self.sharpe_ratio(weights) + penalty
             elif self.optimization_strategy == 'Hierarchical Risk Parity':
@@ -422,7 +426,7 @@ class QAA:
         elif self.optimization_strategy == 'Fama French':
             objective = self.fama_french
         elif self.optimization_strategy == 'CVaR':
-            objective = self.cvar
+            objective = lambda weights: self.cvar(weights, alpha=0.05)
         elif self.optimization_strategy == 'Sharpe Ratio':
              objective = self.sharpe_ratio
         elif self.optimization_strategy == 'Hierarchical Risk Parity':
@@ -549,6 +553,7 @@ class QAA:
         CVaR = portfolio_returns[portfolio_returns <= VaR].mean()
         return -CVaR  # Negative because we want to minimize CVaR
 
+
    # ---------------------------------------------------------------------------------------------------- 
 
     # 9TH QAA STRATEGY: "HIERARCHICAL RISK PARITY"
@@ -596,7 +601,7 @@ class QAA:
         elif self.optimization_strategy == 'Fama French':
             self.objective_function = self.fama_french     
         elif self.optimization_strategy == 'CVaR':
-            self.objective_function = self.cvar
+            self.objective_function = lambda weights: self.cvar(weights, alpha=0.05)
         elif self.optimization_strategy == 'HRP': 
             self.optimal_weights = self.optimize_hrp()
             return
