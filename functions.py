@@ -373,7 +373,7 @@ class QAA:
             elif self.optimization_strategy == 'Roy Safety First Ratio':
                 objective_value = self.roy_safety_first_ratio(weights) + penalty
             elif self.optimization_strategy == 'Sortino Ratio':  
-                objective_value = self.sortino_ratio(weights, self.rf) + penalty
+                objective_value = self.sortino_ratio(weights) + penalty
             elif self.optimization_strategy == 'Fama French':
                 objective_value = self.fama_french(weights) + penalty
             elif self.optimization_strategy == 'CVaR':
@@ -511,27 +511,13 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
     # 6TH QAA STRATEGY: "SORTINO RATIO"
-    def sortino_ratio(self, weights, downside_threshold=0.0):
-        """Strategy based on the Sortino Ratio."""
-        if not np.isclose(np.sum(weights), 1.0):
-            raise ValueError("Weights must sum to 1.0")
-
-        portfolio_return = np.dot(weights, self.returns.mean())
-        excess_returns = self.returns * 252 - self.rf
-        downside = excess_returns[excess_returns < downside_threshold]
-        semivariance = np.mean(np.square(downside.sum(axis=1) * weights))
-        sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
-        return -sortino_ratio
-
-
-    # def sortino_ratio(self, weights):
-    #     """Sortino ratio strategy."""
-    #     portfolio_returns = np.dot(self.returns, weights)
-    #     excess_returns = portfolio_returns - self.rf / 252
-    #     downside_deviation = np.sqrt(np.mean(np.minimum(excess_returns, 0) ** 2))
-    #     return -(np.mean(excess_returns) / downside_deviation if downside_deviation != 0 else np.inf)
-
-
+    def sortino_ratio(self, weights):
+        portfolio_return = np.sum(self.returns.mean() * weights) * 252
+        downside_returns = self.returns.copy()
+        downside_returns[downside_returns > 0] = 0
+        downside_std = np.sqrt(np.sum((downside_returns.std() * weights)**2) * 252)
+        sortino_ratio = (portfolio_return - self.rf) / downside_std
+        return -sortino_ratio  
 
     # ----------------------------------------------------------------------------------------------------  
     # 7TH QAA STRATEGY: "FAMA FRENCH"
