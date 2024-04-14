@@ -329,6 +329,10 @@ class QAA:
             self.optimization_strategy = hrp_weights
         elif self.optimization_strategy == 'Sharpe Ratio':
              objective = self.sharpe_ratio
+        elif self.optimization_strategy == 'Black Litterman':
+             objective = self.black_litterman
+        elif self.optimization_strategy == 'Total Return':
+             objective = self.Total_return
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -389,6 +393,10 @@ class QAA:
                 hrp_weights = hrp_instance.optimize_hrp()
                 self.optimal_weights = hrp_weights
                 return objective_value + penalty
+            elif self.optimization_strategy == 'Black Litterman':
+                objective_value = self.black_litterman(weights) + penalty
+            elif self.optimization_strategy == 'Total Return':
+                objective_value = self.Total_return(weights) + penalty
             else:
                 raise ValueError("Invalid optimization strategy.")
 
@@ -434,6 +442,10 @@ class QAA:
             hrp_weights = hrp_instance.optimize_hrp()
             self.optimal_weights = hrp_weights
             objetive = self.hrp_weights
+        elif self.optimization_strategy == 'Black Litterman':
+             objective = self.black_litterman
+        elif self.optimization_strategy == 'Total Return':
+             objective = self.Total_return
         else:
             raise ValueError("Invalid optimization strategy.")
 
@@ -491,15 +503,39 @@ class QAA:
         return semivariance
     # ----------------------------------------------------------------------------------------------------  
 
-    # 4TH QAA STRATEGY: "MARTINGALE "
-    def martingale(self, weights):
-        """Martingale strategy."""
-        past_returns = self.returns.iloc[-1]  # Last returns
-        adjustment = 1 - past_returns / past_returns.mean()  # Adjust based on relative performance
-        adjusted_weights = weights * adjustment
-        return np.dot(adjusted_weights.T, np.dot(self.returns.cov() * 252, adjusted_weights))
+    # 4TH QAA STRATEGY: "Black Litterman"
+    def black_litterman(self, weight, expected_returns=np.array([.15, .2, .25, .30]),
+                        opinions_p=np.array([[1, 0, 0, 0], [0, 1, -3, 0], [0, 0, 1, -1], [0, 0, 0, 0]]),
+                        tau=0.025):
+        """Calculates weights for black litterman"""
+        # Estimaciones subjetivas
+        E_r = expected_returns  # Expectativas de rendimiento del inversionista, solo 1 por activo (se pueden poner menos, pero "opiniones_p" debe de coincidir en tamaño)
+        opinions_p = opinions_p  # 1 por cada rendimiento en E_r, y 1 fila por cada opinion
+        Omega = np.diag(np.power(E_r, 2))
     
     # ----------------------------------------------------------------------------------------------------  
+
+        
+        # Datos de entrada
+        returns = self.returns  # Media de los rendimientos
+        cov = returns.cov()  # Matriz de covarianza de los rendimientos
+        tau = tau
+
+        # Calculo de los parametros del modelo Black-Litterman
+        posterior_mu = (returns.mean() + tau * cov.dot(opinions_p.T).dot(
+            np.linalg.inv(opinions_p.dot(tau ** 2 * cov).dot(opinions_p.T) + Omega))
+                        .dot(E_r - opinions_p.dot(returns.mean())))
+
+        posterior_cov = (cov + tau * cov - tau ** 2 * cov).dot(opinions_p.T).dot(
+            np.linalg.inv(opinions_p.dot(tau ** 2 * cov).dot(opinions_p.T) + Omega)).dot(
+            opinions_p.dot(tau ** 2 * cov))
+
+        volatility = np.sqrt(np.diagonal(posterior_cov))
+
+        objective_function = -posterior_mu.dot(weight) + 0.5 * tau * weight.dot(posterior_cov).dot(weight)
+
+        return objective_function
+    # ----------------------------------------------------------------------------------------------------
 
     # 5TH QAA STRATEGY: "ROY SAFETY FIRST RATIO"
     def roy_safety_first_ratio(self, weights):
@@ -565,7 +601,35 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
 
-    # 11TH QAA STRATEGY: ""
+    # 11TH QAA STRATEGY: "Total Return AA"
+    def Total_return(self, weights, lambda_a=1):
+            """
+            Calcula el ratio de Sharpe modificado para una asignación de pesos dada.
+
+            Parameters:
+            - weights (numpy.array): Pesos de asignación de cartera.
+
+            Returns:
+            - float: Valor de los pesos de Total Return AA.
+            """
+            # Calcula los rendimientos del portafolio
+            portfolio_returns = np.dot(self.returns, weights)
+
+            # Calcula la volatilidad del portafolio
+            portfolio_volatility = np.sqrt(np.dot(weights.T, np.dot(self.returns.cov() * 252, weights)))
+
+            # Calcula el rendimiento esperado de la cartera (tau)
+            portfolio_expected_return = np.dot(weights, self.returns.mean())
+
+            rf = self.rf
+            benchmark_returns = self.benchmark_returns.mean()
+
+            # Calcula el ratio de Sharpe modificado utilizando la fórmula
+            objective_function = (np.dot(weights, self.returns.mean()) - rf) / (
+                        benchmark_returns - rf + lambda_a * np.sqrt(
+                    np.dot(weights.T, np.dot(self.returns.cov() * 252, weights))))
+
+            return objective_function
 
     # ----------------------------------------------------------------------------------------------------  
 
@@ -596,6 +660,10 @@ class QAA:
             return
         elif self.optimization_strategy == 'Sharpe Ratio':
              self.objective_function = self.sharpe_ratio
+        elif self.optimization_strategy == 'Black Litterman':
+            self.objective_function = self.black_litterman
+        elif self.optimization_strategy == 'Total Return':
+            self.objective_function = self.Total_return
         else:
             raise ValueError("Invalid optimization strategy.")
 
