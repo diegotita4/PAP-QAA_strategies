@@ -511,15 +511,18 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
     # 6TH QAA STRATEGY: "SORTINO RATIO"
-    def sortino_ratio(self, weights, threshold=0.0):
+    def sortino_ratio(self, weights, downside_threshold=0.0):
         """Strategy based on the Sortino Ratio."""
+        if not np.isclose(np.sum(weights), 1.0):
+            raise ValueError("Weights must sum to 1.0")
+
         portfolio_return = np.dot(weights, self.returns.mean())
         excess_returns = self.returns * 252 - self.rf
-        downside = excess_returns[excess_returns < 0]
-        dw = downside.multiply(weights, axis=1)
-        semivariance = np.mean(np.square(dw.sum(axis=1)))
+        downside = excess_returns[excess_returns < downside_threshold]
+        semivariance = np.mean(np.square(downside.sum(axis=1) * weights))
         sortino_ratio = (portfolio_return * 252 - self.rf) / np.sqrt(semivariance)
         return -sortino_ratio
+
 
     # def sortino_ratio(self, weights):
     #     """Sortino ratio strategy."""
