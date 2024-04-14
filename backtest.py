@@ -11,7 +11,7 @@ import logging
 import matplotlib.pyplot as plt
 from functions import QAA
 
-def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecuencias_rebalanceo_meses, rf, optimization_strategy, optimization_model, valor_portafolio_inicial):
+def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecuencias_rebalanceo_meses, rf, optimization_strategy, optimization_model, valor_portafolio_inicial, comision=0.0025):
     fecha_inicio = pd.to_datetime(start_backtesting)
     fecha_fin = pd.to_datetime(end_date)
     valor_portafolio = valor_portafolio_inicial
@@ -35,13 +35,18 @@ def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecu
     estrategia.load_data()
     estrategia.optimize()
     
-    precios_actuales = estrategia.data.iloc[-1]
     optimal_weights = estrategia.optimal_weights
     
     valor_inversion_por_ticker = valor_portafolio * optimal_weights
-    num_acciones = (valor_inversion_por_ticker / precios_actuales).apply(np.floor)
-    valor_invertido = num_acciones * precios_actuales
+    # Calcular el nuevo precio ajustado por la comisión
+    precios_actuales = estrategia.data.iloc[-1]
+    precios_ajustados = precios_actuales * (1 + comision)
+
+    # Calcular el número de acciones basado en el precio ajustado
+    num_acciones = (valor_inversion_por_ticker / precios_ajustados).apply(np.floor)
+    valor_invertido = num_acciones * precios_actuales  # Aquí usamos el precio original para calcular el valor invertido real
     cash_sobrante = valor_portafolio - valor_invertido.sum()
+
     
     num_acciones_anteriores = num_acciones.copy()
     valor_portafolio = valor_invertido.sum() + cash_sobrante
@@ -82,9 +87,12 @@ def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecu
             
             if not num_acciones_anteriores.equals(pd.Series(0, index=tickers)):
                 valor_portafolio = (num_acciones_anteriores * precios_actuales).sum()
-            
+
             valor_inversion_por_ticker = valor_portafolio * optimal_weights
-            num_acciones = (valor_inversion_por_ticker / precios_actuales).apply(np.floor)
+        
+            # Ajustar precios por comisión
+            precios_ajustados = precios_actuales * (1 + comision)
+            num_acciones = (valor_inversion_por_ticker / precios_ajustados).apply(np.floor)
             valor_invertido = num_acciones * precios_actuales
             cash_sobrante = valor_portafolio - valor_invertido.sum()
             
@@ -92,7 +100,8 @@ def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecu
             
             num_acciones_anteriores = num_acciones.copy()
             valor_portafolio = valor_invertido.sum() + cash_sobrante
-            
+
+
             fila_resultado = {
                 'fecha_data_origen': start_date,
                 'fecha_fin': fecha_rebalanceo_fin.strftime('%Y-%m-%d'),
