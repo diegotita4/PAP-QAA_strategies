@@ -11,122 +11,120 @@ import logging
 import matplotlib.pyplot as plt
 from functions import QAA
 
-def backtesting_dinamico(tickers, start_date, start_backtesting, end_date, frecuencias_rebalanceo_meses, rf, optimization_strategy, optimization_model, valor_portafolio_inicial, comision=0.0025):
-    fecha_inicio = pd.to_datetime(start_backtesting)
-    fecha_fin = pd.to_datetime(end_date)
-    valor_portafolio = valor_portafolio_inicial
-    num_acciones_anteriores = pd.Series(0, index=tickers)
-    resultados = []
+def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, rebalance_frequency_months, rf, optimization_strategy, optimization_model, initial_portfolio_value, commission=0.0025):
+    start_date = pd.to_datetime(start_backtesting)
+    end_date = pd.to_datetime(end_date)
+    portfolio_value = initial_portfolio_value
+    previous_num_shares = pd.Series(0, index=tickers)
+    results = []
     
-    # Proceso inicial en start_backtesting
-    fecha_actual = fecha_inicio
-    fecha_rebalanceo_fin = fecha_actual   
-    if fecha_rebalanceo_fin > fecha_fin:
-        fecha_rebalanceo_fin = fecha_fin
+    # Initial process at start_backtesting
+    current_date = start_date
+    rebalance_end_date = current_date   
+    if rebalance_end_date > end_date:
+        rebalance_end_date = end_date
     
-    estrategia = QAA(
+    strategy = QAA(
         tickers=tickers,
-        start_date=start_date,  # Datos históricos desde start_date
-        end_date=fecha_rebalanceo_fin.strftime('%Y-%m-%d'),
+        start_date=start_date_data,  # Historical data from start_date
+        end_date=rebalance_end_date.strftime('%Y-%m-%d'),
         rf=rf
     )
-    estrategia.set_optimization_strategy(optimization_strategy)
-    estrategia.set_optimization_model(optimization_model)
-    estrategia.load_data()
-    estrategia.optimize()
+    strategy.set_optimization_strategy(optimization_strategy)
+    strategy.set_optimization_model(optimization_model)
+    strategy.load_data()
+    strategy.optimize()
     
-    optimal_weights = estrategia.optimal_weights
+    optimal_weights = strategy.optimal_weights
     
-    valor_inversion_por_ticker = valor_portafolio * optimal_weights
-    # Calcular el nuevo precio ajustado por la comisión
-    precios_actuales = estrategia.data.iloc[-1]
-    precios_ajustados = precios_actuales * (1 + comision)
+    investment_value_per_ticker = portfolio_value * optimal_weights
+    # Calculate new price adjusted by the commission
+    current_prices = strategy.data.iloc[-1]
+    adjusted_prices = current_prices * (1 + commission)
 
-    # Calcular el número de acciones basado en el precio ajustado
-    num_acciones = (valor_inversion_por_ticker / precios_ajustados).apply(np.floor)
-    valor_invertido = num_acciones * precios_actuales  # Aquí usamos el precio original para calcular el valor invertido real
-    cash_sobrante = valor_portafolio - valor_invertido.sum()
+    # Calculate number of shares based on the adjusted price
+    num_shares = (investment_value_per_ticker / adjusted_prices).apply(np.floor)
+    invested_value = num_shares * current_prices  # We use the original price to calculate the actual invested value
+    remaining_cash = portfolio_value - invested_value.sum()
 
     
-    num_acciones_anteriores = num_acciones.copy()
-    valor_portafolio = valor_invertido.sum() + cash_sobrante
+    previous_num_shares = num_shares.copy()
+    portfolio_value = invested_value.sum() + remaining_cash
     
-    fila_resultado = {
-        'fecha_data_origen': start_date,
-        'fecha_fin': fecha_rebalanceo_fin.strftime('%Y-%m-%d'),
-        **{f'peso_{ticker}': optimal_weights[i] for i, ticker in enumerate(tickers)},
-        **{f'acciones_{ticker}': num_acciones[ticker] for ticker in tickers},
-        **{f'valor_{ticker}': valor_invertido[ticker] for ticker in tickers},
-        'cash_sobrante': cash_sobrante,
-        'valor_total_cartera': valor_portafolio
+    result_row = {
+        'data_origin_date': start_date_data,
+        'end_date': rebalance_end_date.strftime('%Y-%m-%d'),
+        **{f'weight_{ticker}': optimal_weights[i] for i, ticker in enumerate(tickers)},
+        **{f'shares_{ticker}': num_shares[ticker] for ticker in tickers},
+        **{f'value_{ticker}': invested_value[ticker] for ticker in tickers},
+        'remaining_cash': remaining_cash,
+        'total_portfolio_value': portfolio_value
     }
     
-    resultados.append(fila_resultado)
+    results.append(result_row)
     
-    # Continuación del proceso de rebalanceo después del inicio
-    for frecuencia_rebalanceo_meses in frecuencias_rebalanceo_meses:
-        fecha_actual = fecha_rebalanceo_fin
-        while fecha_actual <= fecha_fin:
-            fecha_rebalanceo_fin = fecha_actual + relativedelta(months=frecuencia_rebalanceo_meses)
-            if fecha_rebalanceo_fin > fecha_fin:
-                fecha_rebalanceo_fin = fecha_fin
+    # Continue the rebalancing process after the start
+    for rebalance_frequency_month in rebalance_frequency_months:
+        current_date = rebalance_end_date
+        while current_date <= end_date:
+            rebalance_end_date = current_date + relativedelta(months=rebalance_frequency_month)
+            if rebalance_end_date > end_date:
+                rebalance_end_date = end_date
             
-            estrategia = QAA(
+            strategy = QAA(
                 tickers=tickers, 
-                start_date=start_date, 
-                end_date=fecha_rebalanceo_fin.strftime('%Y-%m-%d'), 
+                start_date=start_date_data, 
+                end_date=rebalance_end_date.strftime('%Y-%m-%d'), 
                 rf=rf
             )
-            estrategia.set_optimization_strategy(optimization_strategy)
-            estrategia.set_optimization_model(optimization_model)
-            estrategia.load_data()
-            estrategia.optimize()
+            strategy.set_optimization_strategy(optimization_strategy)
+            strategy.set_optimization_model(optimization_model)
+            strategy.load_data()
+            strategy.optimize()
             
-            precios_actuales = estrategia.data.iloc[-1]
-            optimal_weights = estrategia.optimal_weights
+            current_prices = strategy.data.iloc[-1]
+            optimal_weights = strategy.optimal_weights
             
-            if not num_acciones_anteriores.equals(pd.Series(0, index=tickers)):
-                valor_portafolio = (num_acciones_anteriores * precios_actuales).sum()
+            if not previous_num_shares.equals(pd.Series(0, index=tickers)):
+                portfolio_value = (previous_num_shares * current_prices).sum()
 
-            valor_inversion_por_ticker = valor_portafolio * optimal_weights
+            investment_value_per_ticker = portfolio_value * optimal_weights
         
-            # Ajustar precios por comisión
-            precios_ajustados = precios_actuales * (1 + comision)
-            num_acciones = (valor_inversion_por_ticker / precios_ajustados).apply(np.floor)
-            valor_invertido = num_acciones * precios_actuales
-            cash_sobrante = valor_portafolio - valor_invertido.sum()
+            # Adjust prices for commission
+            adjusted_prices = current_prices * (1 + commission)
+            num_shares = (investment_value_per_ticker / adjusted_prices).apply(np.floor)
+            invested_value = num_shares * current_prices
+            remaining_cash = portfolio_value - invested_value.sum()
             
-            diff_acciones = num_acciones - num_acciones_anteriores
+            diff_shares = num_shares - previous_num_shares
             
-            num_acciones_anteriores = num_acciones.copy()
-            valor_portafolio = valor_invertido.sum() + cash_sobrante
+            previous_num_shares = num_shares.copy()
+            portfolio_value = invested_value.sum() + remaining_cash
 
-
-            fila_resultado = {
-                'fecha_data_origen': start_date,
-                'fecha_fin': fecha_rebalanceo_fin.strftime('%Y-%m-%d'),
-                **{f'peso_{ticker}': optimal_weights[i] for i, ticker in enumerate(tickers)},
-                **{f'acciones_{ticker}': num_acciones[ticker] for ticker in tickers},
-                **{f'diff_{ticker}': diff_acciones[ticker] for ticker in tickers},
-                **{f'valor_{ticker}': valor_invertido[ticker] for ticker in tickers},
-                'cash_sobrante': cash_sobrante,
-                'valor_total_cartera': valor_portafolio
+            result_row = {
+                'data_origin_date': start_date_data,
+                'end_date': rebalance_end_date.strftime('%Y-%m-%d'),
+                **{f'weight_{ticker}': optimal_weights[i] for i, ticker in enumerate(tickers)},
+                **{f'shares_{ticker}': num_shares[ticker] for ticker in tickers},
+                **{f'diff_{ticker}': diff_shares[ticker] for ticker in tickers},
+                **{f'value_{ticker}': invested_value[ticker] for ticker in tickers},
+                'remaining_cash': remaining_cash,
+                'total_portfolio_value': portfolio_value
             }
             
-            resultados.append(fila_resultado)
-            fecha_actual = fecha_rebalanceo_fin
-            if fecha_rebalanceo_fin == fecha_fin:
+            results.append(result_row)
+            current_date = rebalance_end_date
+            if rebalance_end_date == end_date:
                 break
-    
-    return pd.DataFrame(resultados)
+    results = pd.DataFrame(results)
 
+    # Daily Data Preparation
 
-def plot_portfolio_value(resultados_backtesting, tickers):
     # Prepare the dataframe with dynamic column names for each ticker
-    df_columns = ['fecha_fin'] + [f'acciones_{ticker}' for ticker in tickers] + ['cash_sobrante']
-    df = resultados_backtesting[df_columns].copy()
-    df['fecha_fin'] = pd.to_datetime(df['fecha_fin'])
-    df.set_index('fecha_fin', inplace=True)
+    df_columns = ['end_date'] + [f'shares_{ticker}' for ticker in tickers] + ['remaining_cash']
+    df = results[df_columns].copy()
+    df['end_date'] = pd.to_datetime(df['end_date'])
+    df.set_index('end_date', inplace=True)
 
     # Generate a date range for the daily data
     start_date = df.index.min()
@@ -135,32 +133,65 @@ def plot_portfolio_value(resultados_backtesting, tickers):
 
     # Create a new dataframe with a record for each day, forward-filling the rebalancing information
     daily_data = pd.DataFrame(index=date_range)
-    daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'fecha_fin'})
+    daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'end_date'})
 
     # Fetch historical stock data using yfinance for the entire range of daily_data
-    stock_data = yf.download(tickers, start=daily_data['fecha_fin'].min(), end=daily_data['fecha_fin'].max())
+    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max())
     prices = stock_data['Adj Close']
 
     # Update the index of daily_data to match the dates from the stock data
-    daily_data.set_index('fecha_fin', inplace=True)
+    daily_data.set_index('end_date', inplace=True)
     daily_data = daily_data.reindex(prices.index).ffill()
 
     # Calculate the daily portfolio value
-    portfolio_value = daily_data['cash_sobrante']
+    portfolio_value = daily_data['remaining_cash']
     for ticker in tickers:
-        portfolio_value += daily_data[f'acciones_{ticker}'] * prices[ticker]
+        portfolio_value += daily_data[f'shares_{ticker}'] * prices[ticker]
+
+    return results, daily_data, portfolio_value
+
+#-------------------------
+
+def plot_portfolio_value(resultados_backtesting, tickers):
+    # Prepare the dataframe with dynamic column names for each ticker
+    df_columns = ['end_date'] + [f'shares_{ticker}' for ticker in tickers] + ['remaining_cash']
+    df = resultados_backtesting[df_columns].copy()
+    df['end_date'] = pd.to_datetime(df['end_date'])
+    df.set_index('end_date', inplace=True)
+
+    # Generate a date range for the daily data
+    start_date = df.index.min()
+    end_date = df.index.max()
+    date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+
+    # Create a new dataframe with a record for each day, forward-filling the rebalancing information
+    daily_data = pd.DataFrame(index=date_range)
+    daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'end_date'})
+
+    # Fetch historical stock data using yfinance for the entire range of daily_data
+    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max())
+    prices = stock_data['Adj Close']
+
+    # Update the index of daily_data to match the dates from the stock data
+    daily_data.set_index('end_date', inplace=True)
+    daily_data = daily_data.reindex(prices.index).ffill()
+
+    # Calculate the daily portfolio value
+    portfolio_value = daily_data['remaining_cash']
+    for ticker in tickers:
+        portfolio_value += daily_data[f'shares_{ticker}'] * prices[ticker]
 
     # Plot the portfolio value over time
     plt.figure(figsize=(14, 7))
     plt.plot(portfolio_value.index, portfolio_value, label='Portfolio Value', color='green')
 
     # Add vertical lines for rebalance dates
-    for date in df.index:
-        plt.axvline(x=date, color='red', linestyle='--')
+    # for date in df.index:
+    #     plt.axvline(x=date, color='red', linestyle='--')
 
     # Create custom legends
-    legend_elements = [Line2D([0], [0], color='green', lw=2, label='Portfolio Value'),
-                       Line2D([0], [0], color='red', linestyle='--', label='Rebalance Date')]
+    legend_elements = [Line2D([0], [0], color='green', lw=2, label='Portfolio Value')]#,
+                    #    Line2D([0], [0], color='red', linestyle='--', label='Rebalance Date')]
     plt.legend(handles=legend_elements)
 
     plt.title('Daily Portfolio Value Over Time')
