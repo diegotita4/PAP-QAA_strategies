@@ -152,3 +152,6 @@ dmypy.json
 
 # Exclude macOS files
 .DS_Store
+
+# Exclude data_user folder
+data_usuario/
