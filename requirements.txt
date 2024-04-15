@@ -1,5 +1,4 @@
 
-"""
 # -- --------------------------------------------------------------------------------------------------- -- #
 # -- project: Quantitative Analysis and Allocation (QAA)                                                 -- #
 # -- script: requirements.txt - Text file with the required libraries for the project                    -- #
@@ -7,26 +6,27 @@
 # -- license: GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007                                       -- #
 # -- repository: https://github.com/diegotita4/PAP                                                       -- #
 # -- --------------------------------------------------------------------------------------------------- -- #
-"""
 
-"""
-OPTION 1: Terminal:
+# OPTION 1: Terminal:
 
-1-. Run the command pip freeze > requirements.txt.
-2-. Install the dependencies using pip install -r requirements.txt.
+# 1-. Run the command pip freeze > requirements.txt.
+# 2-. Install the dependencies using pip install -r requirements.txt.
 
-OPTION 2: Visual Studio:
+# OPTION 2: Visual Studio:
 
-1-. Create a virtual environment using python -m venv venv.
-2-. Select it in VSCode by going to View -> Command Palette -> Python: Select Interpreter.
-3-. Activate it in View -> Command Palette -> Terminal: Create New Integrated Terminal.
-4-. Install the libraries from the file using python -m pip install -r requirements.txt.
-"""
+# 1-. Create a virtual environment using python -m venv venv.
+# 2-. Select it in VSCode by going to View -> Command Palette -> Python: Select Interpreter.
+# 3-. Activate it in View -> Command Palette -> Terminal: Create New Integrated Terminal.
+# 4-. Install the libraries from the file using python -m pip install -r requirements.txt.
 
 numpy >= 1.26.4
 pandas >= 2.2.0
 scipy >= 1.11.4
 datetime >= 5.5
+optuna >= 3.6.1
+seaborn >= 0.13.2
+empyrical >= 0.5.5
 yfinance >= 0.2.36
 matplotlib >= 3.8.3
 pyportfolioopt >= 1.5.5
+pandas_datareader >= 0.10.0
