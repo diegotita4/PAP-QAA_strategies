@@ -198,7 +198,9 @@ def plot_portfolio_value(resultados_backtesting, tickers):
     plt.grid(True)
     plt.show()
 
-def dynamic_backtesting_x2(tickers, start_date_data, start_backtesting, end_date, rf, optimization_strategy, rebalance_frequency_months=6, input_cash_frequency_months=12, input_cash_amount=0, withdraw_frequency_months=12, withdraw_amount=0, optimization_model='SLSQP', initial_portfolio_value=1_000_000, commission=0.0025):
+# ---------
+
+def dynamic_backtesting_x2(tickers, start_date_data, start_backtesting, end_date, rf, optimization_strategy, data, benchmark_data, rebalance_frequency_months=6, input_cash_frequency_months=12, input_cash_amount=0, withdraw_frequency_months=12, withdraw_amount=0, optimization_model='SLSQP', initial_portfolio_value=1_000_000, commission=0.0025):
     start_date = pd.to_datetime(start_backtesting)
     end_date = pd.to_datetime(end_date)
     portfolio_value = initial_portfolio_value
@@ -225,18 +227,44 @@ def dynamic_backtesting_x2(tickers, start_date_data, start_backtesting, end_date
         strategy.load_data()
         strategy.optimize()
         optimal_weights = strategy.optimal_weights
-        current_prices = strategy.data.iloc[-1]
+        current_prices = strategy.data.iloc[-1]  
 
+        # Use current portfolio value to calculate investment per ticker
+        if not previous_num_shares.equals(pd.Series(0, index=tickers)):
+            portfolio_value = (previous_num_shares * current_prices).sum()  
         investment_value_per_ticker = portfolio_value * optimal_weights
+
         num_shares, remaining_cash = calculate_new_shares(current_prices, investment_value_per_ticker)
 
         diff_shares = num_shares - previous_num_shares
         previous_num_shares = num_shares.copy()
-        portfolio_value = (num_shares * current_prices).sum() + remaining_cash
-        return optimal_weights, num_shares, diff_shares, remaining_cash
+        portfolio_value = (num_shares * current_prices).sum() + remaining_cash 
+        return optimal_weights, num_shares, diff_shares, remaining_cash    
+
+    # --- Initial Rebalance (Start) ---
+    strategy = QAA(tickers=tickers, start_date=start_date_data, end_date=current_date.strftime('%Y-%m-%d'), rf=rf)
+    optimal_weights, num_shares, diff_shares, remaining_cash = execute_rebalance()
+    action = 'Start'
+    current_prices = strategy.load_data()[0].iloc[-1]  # Get current_prices here
+
+    result_row = {
+        'data_origin_date': start_date_data,
+        'end_date': current_date.strftime('%Y-%m-%d'),
+        'action': action,
+        **{f'weight_{ticker}': optimal_weights[i] for i, ticker in enumerate(tickers)},
+        **{f'shares_{ticker}': num_shares[ticker] for ticker in tickers},
+        **{f'diff_{ticker}': diff_shares[ticker] for ticker in tickers},
+        **{f'value_{ticker}': (num_shares * current_prices)[ticker] for ticker in tickers},  
+        'remaining_cash': remaining_cash,
+        'total_portfolio_value': portfolio_value
+    }
+    results.append(result_row)
+
 
     # --- Main Loop (Monthly Iteration) ---
     while current_date <= end_date:
+        current_date += relativedelta(months=1)  # Move to the next month
+
         # Rebalancing
         if current_date.month % rebalance_frequency_months == 0:
             optimal_weights, num_shares, diff_shares, remaining_cash = execute_rebalance()
@@ -275,24 +303,23 @@ def dynamic_backtesting_x2(tickers, start_date_data, start_backtesting, end_date
         current_value_per_ticker = num_shares * current_prices
         if current_value_per_ticker.sum() > 0:
             end_of_month_weights = current_value_per_ticker / current_value_per_ticker.sum()
-        else: 
+        else:
             end_of_month_weights = pd.Series(0, index=tickers)
 
-        result_row = {
-            'data_origin_date': start_date_data,
-            'end_date': current_date.strftime('%Y-%m-%d'),
-            'action': action, 
-            **{f'weight_{ticker}': optimal_weights[i] if optimal_weights is not None else None for i, ticker in enumerate(tickers)},
-            **{f'shares_{ticker}': num_shares[ticker] for ticker in tickers},
-            **{f'diff_{ticker}': diff_shares[ticker] for ticker in tickers},
-            **{f'value_{ticker}': current_value_per_ticker[ticker] for ticker in tickers},
-            **{f'eom_weight_{ticker}': end_of_month_weights[i] for i, ticker in enumerate(tickers)},
-            'remaining_cash': remaining_cash,
-            'total_portfolio_value': portfolio_value
-        }
-        results.append(result_row)
-
-        current_date += relativedelta(months=1) 
+        if action is not None: 
+            result_row = {
+                'data_origin_date': start_date_data,
+                'end_date': current_date.strftime('%Y-%m-%d'),
+                'action': action, 
+                **{f'weight_{ticker}': optimal_weights[i] if optimal_weights is not None else None for i, ticker in enumerate(tickers)},
+                **{f'shares_{ticker}': num_shares[ticker] for ticker in tickers},
+                **{f'diff_{ticker}': diff_shares[ticker] for ticker in tickers},
+                **{f'value_{ticker}': current_value_per_ticker[ticker] for ticker in tickers},
+                **{f'eom_weight_{ticker}': end_of_month_weights[i] for i, ticker in enumerate(tickers)},
+                'remaining_cash': remaining_cash,
+                'total_portfolio_value': portfolio_value
+            }
+            results.append(result_row)
 
     results = pd.DataFrame(results)
 
