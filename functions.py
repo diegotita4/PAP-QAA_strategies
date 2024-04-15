@@ -512,9 +512,6 @@ class QAA:
         E_r = expected_returns  # Expectativas de rendimiento del inversionista, solo 1 por activo (se pueden poner menos, pero "opiniones_p" debe de coincidir en tamaño)
         opinions_p = opinions_p  # 1 por cada rendimiento en E_r, y 1 fila por cada opinion
         Omega = np.diag(np.power(E_r, 2))
-    
-    # ----------------------------------------------------------------------------------------------------  
-
         
         # Datos de entrada
         returns = self.returns  # Media de los rendimientos
@@ -631,7 +628,7 @@ class QAA:
 
             return objective_function
 
-    # ----------------------------------------------------------------------------------------------------  
+    # ----------------------------------------------------------------------------------------------------
 
 
     # FINAL OPTIMIZE FUNCTION
