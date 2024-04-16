@@ -7,6 +7,7 @@ import yfinance as yf
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from matplotlib.lines import Line2D
+import plotly.express as px
 
 def show_backtesting():
     st.title('Backtesting Page')
@@ -59,26 +60,19 @@ def show_backtesting():
             # Plot the last asset weights pie chart
             plot_asset_weights_pie_chart(resultados_backtesting, tickers_list)
 
-
 def plot_portfolio_value(daily_data, portfolio_values):
-    plt.figure(figsize=(7, 4))
-    plt.plot(daily_data.index, portfolio_values, label='Portfolio Value', color='blue')  # Use the index directly
-    plt.title('Portfolio Value Over Time')
-    plt.xlabel('Date')
-    plt.ylabel('Portfolio Value ($)')
-    plt.legend()
-    plt.grid(True)
-    st.pyplot(plt)
-
+    fig = px.line(daily_data, x=daily_data.index, y=portfolio_values, labels={'y': 'Portfolio Value ($)', 'x': 'Date'},
+                  title='Portfolio Value Over Time')
+    fig.update_layout(xaxis_title='Date', yaxis_title='Portfolio Value ($)', legend_title='Legend')
+    fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name='Portfolio Value', line=dict(color='blue'))
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_asset_weights_pie_chart(resultados_backtesting, tickers):
     # Extract the last row for the latest weights
     last_weights = resultados_backtesting.iloc[-1]
     weights = [last_weights[f'weight_{ticker}'] for ticker in tickers]
     labels = tickers
-
-    # Plot pie chart
-    plt.figure(figsize=(4, 4))
-    plt.pie(weights, labels=labels, autopct='%1.1f%%')
-    plt.title('Latest Asset Weights in Portfolio')
-    st.pyplot(plt)
+    
+    fig = px.pie(values=weights, names=labels, title='Latest Asset Weights in Portfolio')
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig, use_container_width=True)
