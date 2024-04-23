@@ -71,11 +71,42 @@ def show_basic():
                     st.metric(label="Total Portfolio Value", value=f"${result_df['total_portfolio_value'].iloc[-1]:,.2f}")
 
 def plot_all_strategies(strategy_results):
-    fig = px.line()
+    # Create a line plot for portfolio values
+    line_fig = px.line()
+
+    # We will first identify the best performing strategy based on the last 'total_portfolio_value'
+    best_strategy = None
+    highest_value = -float('inf')  # Initialize with a very low number
+
     for strategy, (result_df, daily_data, portfolio_values) in strategy_results.items():
-        fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name=strategy)
-    fig.update_layout(title="Portfolio Value Over Time by Strategy",
-                      xaxis_title='Date',
-                      yaxis_title='Portfolio Value ($)',
-                      legend_title='Strategy')
-    st.plotly_chart(fig, use_container_width=True)
+        line_fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name=strategy)
+        # Determine if this strategy has the highest ending portfolio value
+        if result_df['total_portfolio_value'].iloc[-1] > highest_value:
+            highest_value = result_df['total_portfolio_value'].iloc[-1]
+            best_strategy = (strategy, result_df)
+
+    line_fig.update_layout(title="Portfolio Value Over Time by Strategy",
+                           xaxis_title='Date',
+                           yaxis_title='Portfolio Value ($)',
+                           legend_title='Strategy')
+
+    # Now plot only the pie chart for the best strategy
+    if best_strategy:
+        strategy_name, result_df = best_strategy
+        last_weights = {col.split('_')[-1]: result_df[col].iloc[-1] for col in result_df.columns if col.startswith('weight_')}
+        pie_labels = list(last_weights.keys())
+        pie_values = list(last_weights.values())
+        
+        # Custom color palette for the pie chart
+        custom_colors = px.colors.qualitative.Pastel1
+        
+        pie_fig = px.pie(names=pie_labels, values=pie_values, title=f'Asset Weights for {strategy_name}',
+                         color_discrete_sequence=custom_colors)
+
+    # Use more space for the line chart than for the pie chart
+    col1, col2 = st.columns([3, 1])  # Adjusting column width proportions here
+    with col1:
+        st.plotly_chart(line_fig, use_container_width=True)
+    with col2:
+        if best_strategy:
+            st.plotly_chart(pie_fig, use_container_width=True)
