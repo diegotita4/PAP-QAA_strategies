@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 import plotly.express as px
 
 
-list_strategy = ['Minimum Variance', 'Omega Ratio', 'Semivariance', 'Martingale', 
+list_strategy = ['Minimum Variance', 'Omega Ratio', 'Semivariance',# 'Martingale', 
                  'Roy Safety First Ratio', 'Sortino Ratio', 'Fama French', 'CVaR', 
                  'HRP', 'Sharpe Ratio', 'Black Litterman', 'Total Return']
 
@@ -35,6 +35,7 @@ def show_basic():
         submitted = st.form_submit_button("Run Backtesting")
 
         if submitted:
+            progress_text = st.empty()  # Placeholder for dynamic text
             progress_bar = st.progress(0)
             strategy_results = {}
             num_strategies = len(list_strategy)
@@ -53,9 +54,11 @@ def show_basic():
                     commission=commission
                 )
                 strategy_results[strategy] = (daily_data, portfolio_values)
-                progress_bar.progress((i + 1) / num_strategies)
-
-            st.success("All strategies have been processed. Displaying results...")
+                current_progress = (i + 1) / num_strategies
+                progress_bar.progress(current_progress)
+                progress_text.text(f"Processing: {int(current_progress * 100)}% Complete")  # Update text
+                
+            progress_text.text("All strategies have been processed. Displaying results...")
 
             # Display the resulting DataFrame
             for strategy, (result_df, _, _) in strategy_results.items():
