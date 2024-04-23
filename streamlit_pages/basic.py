@@ -1,16 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from backtest import dynamic_backtesting  
-import yfinance as yf
+import plotly.express as px
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from matplotlib.lines import Line2D
-import plotly.express as px
+from backtest import dynamic_backtesting
 
-
-list_strategy = ['Minimum Variance', 'Omega Ratio', 'Semivariance',# 'Martingale', 
+list_strategy = ['Minimum Variance', 'Omega Ratio', 'Semivariance', #'Martingale', 
                  'Roy Safety First Ratio', 'Sortino Ratio', 'Fama French', 'CVaR', 
                  'HRP', 'Sharpe Ratio', 'Black Litterman', 'Total Return']
 
@@ -35,10 +31,11 @@ def show_basic():
         submitted = st.form_submit_button("Run Backtesting")
 
         if submitted:
+            strategy_results = {}
             progress_text = st.empty()  # Placeholder for dynamic text
             progress_bar = st.progress(0)
-            strategy_results = {}
             num_strategies = len(list_strategy)
+
             for i, strategy in enumerate(list_strategy):
                 tickers_list = [ticker.strip() for ticker in tickers.split(',')]
                 resultados_backtesting, daily_data, portfolio_values = dynamic_backtesting(
@@ -49,28 +46,33 @@ def show_basic():
                     rebalance_frequency_months=rebalance_frequency_months, 
                     rf=rf, 
                     optimization_strategy=strategy, 
-                    optimization_model='SLSQP',
+                    optimization_model='SLSQP',  # Assuming a single model for simplicity
                     initial_portfolio_value=initial_portfolio_value,
                     commission=commission
                 )
-                strategy_results[strategy] = (daily_data, portfolio_values)
+                strategy_results[strategy] = (resultados_backtesting, daily_data, portfolio_values)
                 current_progress = (i + 1) / num_strategies
                 progress_bar.progress(current_progress)
                 progress_text.text(f"Processing: {int(current_progress * 100)}% Complete")  # Update text
-                
+            
             progress_text.text("All strategies have been processed. Displaying results...")
+            sorted_results = sorted(strategy_results.items(), key=lambda item: item[1][0]["total_portfolio_value"].iloc[-1], reverse=True)
 
-            # Display the resulting DataFrame
-            for strategy, (result_df, _, _) in strategy_results.items():
-                st.write(f"Results for {strategy}:")
-                st.dataframe(result_df)
+            # Plot all strategies' portfolio values
+            plot_all_strategies(dict(sorted_results))
 
-            # Plot the portfolio values for all strategies
-            plot_all_strategies(strategy_results)
+            # Display DataFrames and Highlight Total Portfolio Values
+            for strategy, (result_df, daily_data, portfolio_values) in sorted_results:
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"Results for {strategy}:")
+                    st.dataframe(result_df)
+                with col2:
+                    st.metric(label="Total Portfolio Value", value=f"${result_df['total_portfolio_value'].iloc[-1]:,.2f}")
 
 def plot_all_strategies(strategy_results):
     fig = px.line()
-    for strategy, (daily_data, portfolio_values) in strategy_results.items():
+    for strategy, (result_df, daily_data, portfolio_values) in strategy_results.items():
         fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name=strategy)
     fig.update_layout(title="Portfolio Value Over Time by Strategy",
                       xaxis_title='Date',
