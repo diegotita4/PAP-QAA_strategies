@@ -11,7 +11,8 @@ import logging
 import matplotlib.pyplot as plt
 from functions import QAA
 
-def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, rebalance_frequency_months, rf, optimization_strategy, optimization_model, initial_portfolio_value, commission=0.0025):
+def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, rebalance_frequency_months, rf, optimization_strategy, optimization_model, initial_portfolio_value,
+                         commission=0.0025, lower_bound=0.10, higher_bound=0.99):
     start_date = pd.to_datetime(start_backtesting)
     end_date = pd.to_datetime(end_date)
     portfolio_value = initial_portfolio_value
@@ -28,7 +29,9 @@ def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, r
         tickers=tickers,
         start_date=start_date_data,  # Historical data from start_date
         end_date=rebalance_end_date.strftime('%Y-%m-%d'),
-        rf=rf
+        rf=rf,
+        lower_bound= lower_bound,
+        higher_bound=higher_bound
     )
     strategy.set_optimization_strategy(optimization_strategy)
     strategy.set_optimization_model(optimization_model)
@@ -73,7 +76,9 @@ def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, r
             tickers=tickers, 
             start_date=start_date_data, 
             end_date=rebalance_end_date.strftime('%Y-%m-%d'), 
-            rf=rf
+            rf=rf,
+            lower_bound= lower_bound,
+            higher_bound=higher_bound
         )
         strategy.set_optimization_strategy(optimization_strategy)
         strategy.set_optimization_model(optimization_model)

@@ -26,6 +26,8 @@ def show_backtesting():
         with col2:
             rebalance_frequency_months = st.slider("Rebalance frequency in months", 1, 12, 6)
             rf = st.number_input("Enter the risk-free rate", value=0.02)
+            lower_bound= st.number_input("Enter the lower bound", value=0.10)
+            higher_bound= st.number_input("Enter the higher  bound", value=0.99)
         
         with col3:
             optimization_strategy = st.selectbox("Choose the optimization strategy", 
@@ -37,6 +39,8 @@ def show_backtesting():
             commission = st.number_input("Transaction commission", value=0.0025)
 
         submitted = st.form_submit_button("Run Backtesting")
+
+    if submitted or 'resultados_backtesting' in st.session_state:
         if submitted:
             tickers_list = [ticker.strip() for ticker in tickers.split(',')]
             resultados_backtesting, daily_data, portfolio_values = dynamic_backtesting(
@@ -44,6 +48,8 @@ def show_backtesting():
                 start_date_data=start_date_data,
                 start_backtesting=start_backtesting,
                 end_date=end_date,
+                lower_bound= lower_bound,
+                higher_bound = higher_bound,
                 rebalance_frequency_months=rebalance_frequency_months, 
                 rf=rf, 
                 optimization_strategy=optimization_strategy, 
@@ -51,21 +57,26 @@ def show_backtesting():
                 initial_portfolio_value=initial_portfolio_value,
                 commission=commission
             )
-            # Display the resulting DataFrame
-            st.write(resultados_backtesting)
+            st.session_state['resultados_backtesting'] = resultados_backtesting
+            st.session_state['daily_data'] = daily_data
+            st.session_state['portfolio_values'] = portfolio_values
+        else:
+            resultados_backtesting = st.session_state['resultados_backtesting']
+            daily_data = st.session_state['daily_data']
+            portfolio_values = st.session_state['portfolio_values']
 
-            # Plot the portfolio value
-            plot_portfolio_value(daily_data, portfolio_values)
+        show_rebalance_lines = st.checkbox("Show rebalance lines on graph")
+        rebalance_dates = resultados_backtesting['end_date'].unique()
+
+        st.write(f"Results for {optimization_strategy}:")
+        st.dataframe(resultados_backtesting)
+
+        # Plot the portfolio value with optional rebalance lines
+        plot_portfolio_value(daily_data, portfolio_values, rebalance_dates, show_rebalance_lines)
 
             # Plot the last asset weights pie chart
-            plot_asset_weights_pie_chart(resultados_backtesting, tickers_list)
+        plot_asset_weights_pie_chart(resultados_backtesting, tickers_list)
 
-def plot_portfolio_value(daily_data, portfolio_values):
-    fig = px.line(daily_data, x=daily_data.index, y=portfolio_values, labels={'y': 'Portfolio Value ($)', 'x': 'Date'},
-                  title='Portfolio Value Over Time')
-    fig.update_layout(xaxis_title='Date', yaxis_title='Portfolio Value ($)', legend_title='Legend')
-    fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name='Portfolio Value', line=dict(color='blue'))
-    st.plotly_chart(fig, use_container_width=True)
 
 def plot_asset_weights_pie_chart(resultados_backtesting, tickers):
     # Extract the last row for the latest weights
@@ -75,4 +86,17 @@ def plot_asset_weights_pie_chart(resultados_backtesting, tickers):
     
     fig = px.pie(values=weights, names=labels, title='Latest Asset Weights in Portfolio')
     fig.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def plot_portfolio_value(daily_data, portfolio_values, rebalance_dates=None, show_rebalance_lines=False):
+    fig = px.line(daily_data, x=daily_data.index, y=portfolio_values, labels={'y': 'Portfolio Value ($)', 'x': 'Date'},
+                  title='Portfolio Value Over Time')
+    fig.update_layout(xaxis_title='Date', yaxis_title='Portfolio Value ($)', legend_title='Legend')
+    fig.add_scatter(x=daily_data.index, y=portfolio_values, mode='lines', name='Portfolio Value', line=dict(color='blue'))
+
+    if show_rebalance_lines and rebalance_dates is not None:
+        for date in rebalance_dates:
+            fig.add_vline(x=date, line_width=2, line_dash="dash", line_color="red")
+
     st.plotly_chart(fig, use_container_width=True)
