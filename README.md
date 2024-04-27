@@ -1,10 +1,10 @@
 
-# Quantitative Analysis and Allocation (QAA)
+# GitHub Repository of "Quantitative Asset Allocation" (QAA)
 
 
 ## Description
 
-This project represents a meticulous and systematic exploration in the field of Quantitative Asset Allocation (QAA). Its central objective is to conduct the backtesting of QAA strategies using historical data, evaluating and optimizing investment portfolios. Through a detailed analysis, the aim is to identify assets efficiently aligned with the investment profiles of clients and investors, considering various criteria and strategic objectives. The specific focus on backtesting QAA strategies aims to discern the most effective methodologies for portfolio optimization, evaluating their historical performance under diverse market conditions. This approach will empower investors to make informed decisions regarding the composition of their portfolios, achieving a balance between risk and expected return in line with their specific investment profiles and objectives.
+This project represents a meticulous and systematic exploration in the field of Quantitative Asset Allocation (QAA). Its central objective is to conduct the backtesting of QAA strategies using historical data, evaluating and optimizing investment portfolios. Through a detailed analysis, the aim is to identify assets efficiently aligned with the investment profiles of investors, considering various criteria, strategic and specific objectives. The main focus on backtesting QAA strategies aims to discern the most effective methodologies for portfolio optimization, evaluating their historical performance under diverse market conditions. This approach will empower investors to make informed decisions regarding the composition of their portfolios, achieving a balance between risk and expected return in line with their specific investment profiles and objectives.
 
 
 ## Install dependencies
