@@ -73,15 +73,14 @@ def show_backtesting():
         st.session_state['portfolio_values'] = portfolio_values
 
     if 'resultados_backtesting' in st.session_state:
-        show_rebalance_lines = st.checkbox("Mostrar líneas de rebalanceo en gráfico")
-
+    
         if 'daily_data' in st.session_state and 'portfolio_values' in st.session_state:
             rebalance_dates = st.session_state['resultados_backtesting']['end_date'].unique()
-            st.write(f"Resultados para {optimization_strategy}:")
+            st.write(f"{optimization_strategy}:")
             st.dataframe(st.session_state['resultados_backtesting'])
 
             # Plot the portfolio value with optional rebalance lines
-            plot_portfolio_value(st.session_state['daily_data'], st.session_state['portfolio_values'], rebalance_dates, show_rebalance_lines)
+            plot_portfolio_value(st.session_state['daily_data'], st.session_state['portfolio_values'], rebalance_dates)
 
         # Always plot the last asset weights pie chart
         plot_asset_weights_pie_chart(st.session_state['resultados_backtesting'], tickers_list)
