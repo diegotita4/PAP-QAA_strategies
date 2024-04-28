@@ -18,16 +18,16 @@ def load_data(tickers, start_date, end_date):
 def main():
     st.sidebar.title("Menú de Navegación")
     # Lista de opciones en el menú lateral
-    choice = st.sidebar.radio("Ir a", ("Inicio", "Cálculo QAA", "Visualización de Resultados", "Basic"))
+    choice = st.sidebar.radio("Ir a", ("Inicio", "Cálculo estrategias QAA", "Visualización de Resultados", "Backtesting sencillo"))
 
     # Navegación entre diferentes páginas en la aplicación
     if choice == "Inicio":
         show_home()
-    elif choice == "Cálculo QAA":
+    elif choice == "Cálculo estrategias QAA":
         show_qaa()
     elif choice == "Visualización de Resultados":
         show_backtesting()
-    elif choice == 'Basic':
+    elif choice == 'Backtesting sencillo':
         show_basic()
 
 if __name__ == "__main__":

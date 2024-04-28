@@ -259,6 +259,18 @@ class QAA:
     def set_optimization_model(self, model):
         """Sets the optimization model."""
         self.optimization_model = model
+        
+    def calculate_portfolio_return(self):
+        """Calculates the expected portfolio return based on current optimal weights."""
+        if self.optimal_weights is not None and self.returns is not None:
+            return np.dot(self.optimal_weights, self.returns.mean()) * 252  # annualized return
+        return None
+
+    def calculate_portfolio_volatility(self):
+        """Calculates the portfolio volatility based on current optimal weights."""
+        if self.optimal_weights is not None and self.returns is not None:
+            return np.sqrt(np.dot(self.optimal_weights.T, np.dot(self.returns.cov() * 252, self.optimal_weights)))  # annualized volatility
+        return None
 
     def load_data(self):
         """Loads historical data for the assets and benchmark."""
