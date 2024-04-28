@@ -211,7 +211,6 @@ class QAA:
     - minimum_variance: Calculates the portfolio with the minimum variance.
     - omega_ratio: Calculates the portfolio with the Omega ratio.
     - semivariance: Calculates the portfolio with the Semivariance.
-    - martingale: Calculates the portfolio with the Martingale strategy.
     - roy_safety_first_ratio: Calculates the portfolio with the Roy Safety First Ratio.
     - cvar: Calculates the portfolio with the CVaR (Conditional Value at Risk).
     - sortino_ratio: Calculates the portfolio with the Sortino ratio.
@@ -313,8 +312,6 @@ class QAA:
             objective = lambda weights: -self.omega_ratio(weights, self.rf)
         elif self.optimization_strategy == 'Semivariance':
             objective = self.semivariance()
-        elif self.optimization_strategy == 'Martingale':
-            objective = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
              objective = self.roy_safety_first_ratio
         elif self.optimization_strategy == 'Sortino Ratio':
@@ -372,8 +369,6 @@ class QAA:
             elif self.optimization_strategy == 'Semivariance':
                 objective_function = self.semivariance()  # Get the lambda function
                 objective_value = objective_function(weights) + penalty  # Invoke it with the weights
-            elif self.optimization_strategy == 'Martingale':
-                objective_value = self.martingale(weights) + penalty
             elif self.optimization_strategy == 'Roy Safety First Ratio':
                 objective_value = self.roy_safety_first_ratio(weights) + penalty
             elif self.optimization_strategy == 'Sortino Ratio':  
@@ -425,8 +420,6 @@ class QAA:
             objective = lambda weights: -self.omega_ratio(weights, self.rf)
         elif self.optimization_strategy == 'Semivariance':
             objective = self.semivariance()
-        elif self.optimization_strategy == 'Martingale':
-            objective = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
             objective = self.roy_safety_first_ratio
         elif self.optimization_strategy == 'Sortino Ratio':
@@ -642,8 +635,6 @@ class QAA:
             self.objective_function = lambda weights: -self.omega_ratio(weights, self.rf)
         elif self.optimization_strategy == 'Semivariance':
             self.objective_function = self.semivariance()
-        elif self.optimization_strategy == 'Martingale':
-            self.objective_function = self.martingale
         elif self.optimization_strategy == 'Roy Safety First Ratio':
             self.objective_function = self.roy_safety_first_ratio
         elif self.optimization_strategy == 'Sortino Ratio':
