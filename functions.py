@@ -522,34 +522,53 @@ class QAA:
     # ----------------------------------------------------------------------------------------------------  
 
     # 4TH QAA STRATEGY: "Black Litterman"
-    def black_litterman(self, weight, expected_returns=np.array([.15, .2, .25, .30]),
-                        opinions_p=np.array([[1, 0, 0, 0], [0, 1, -3, 0], [0, 0, 1, -1], [0, 0, 0, 0]]),
-                        tau=0.025):
-        """Calculates weights for black litterman"""
-        # Estimaciones subjetivas
-        E_r = expected_returns  # Expectativas de rendimiento del inversionista, solo 1 por activo (se pueden poner menos, pero "opiniones_p" debe de coincidir en tamaño)
-        opinions_p = opinions_p  # 1 por cada rendimiento en E_r, y 1 fila por cada opinion
-        Omega = np.diag(np.power(E_r, 2))
-        
+    def black_litterman(self, weights, expected_returns=None, opinions_p=None, tau=0.025):
+        # Asumir retornos históricos incrementados si no se especifican retornos esperados
+        if expected_returns is None:
+            expected_returns = self.returns.mean() * 1.05
+
+        # Utilizar una matriz de identidad si no se proporcionan opiniones específicas
+        if opinions_p is None:
+            opinions_p = np.eye(self.returns.shape[1])  # Asegurar que tiene la misma dimensión que el número de activos
+
+        # Convertir expected_returns a un array numpy si aún no lo es
+        expected_returns = np.array(expected_returns)
+
+        # Asegurarse de que las dimensiones son compatibles
+        if expected_returns.shape[0] != opinions_p.shape[1]:
+            raise ValueError("Dimension mismatch between 'expected_returns' and the number of columns in 'opinions_p'.")
+
+        # Calcular Omega y otros parámetros necesarios
+        Omega = np.diag(np.full(opinions_p.shape[0], 0.1))  # Matriz diagonal para la incertidumbre en las opiniones
+
         # Datos de entrada
-        returns = self.returns  # Media de los rendimientos
-        cov = returns.cov()  # Matriz de covarianza de los rendimientos
-        tau = tau
+        cov = self.returns.cov().values  # Convertir a numpy array si es necesario
+        tau_cov = tau * cov
 
-        # Calculo de los parametros del modelo Black-Litterman
-        posterior_mu = (returns.mean() + tau * cov.dot(opinions_p.T).dot(
-            np.linalg.inv(opinions_p.dot(tau ** 2 * cov).dot(opinions_p.T) + Omega))
-                        .dot(E_r - opinions_p.dot(returns.mean())))
+        # Calculando la inversa necesaria para el modelo
+        inv = np.linalg.inv(opinions_p.dot(tau_cov).dot(opinions_p.T) + Omega)
+        
+        # Ajustar returns.mean() a un vector fila
+        mean_returns = self.returns.mean().values.reshape(-1, 1)  # Reshape para asegurar dimensiones correctas
 
-        posterior_cov = (cov + tau * cov - tau ** 2 * cov).dot(opinions_p.T).dot(
-            np.linalg.inv(opinions_p.dot(tau ** 2 * cov).dot(opinions_p.T) + Omega)).dot(
-            opinions_p.dot(tau ** 2 * cov))
+        # Calcular posterior_mu según Black-Litterman
+        adjusted_returns = expected_returns.reshape(-1, 1) - opinions_p.dot(mean_returns)
+        posterior_mu = mean_returns.flatten() + tau_cov.dot(opinions_p.T).dot(inv).dot(adjusted_returns).flatten()
 
-        volatility = np.sqrt(np.diagonal(posterior_cov))
+        # Asegurar que posterior_mu tiene las dimensiones correctas para el cálculo final
+        if posterior_mu.shape[0] != weights.shape[0]:
+            raise ValueError("Dimension mismatch in final calculation.")
 
-        objective_function = -posterior_mu.dot(weight) + 0.5 * tau * weight.dot(posterior_cov).dot(weight)
+        posterior_cov = cov + tau_cov - tau_cov.dot(opinions_p.T).dot(inv).dot(opinions_p).dot(tau_cov)
+
+        # Función objetivo
+        objective_function = -weights.dot(posterior_mu) + 0.5 * tau * weights.dot(posterior_cov).dot(weights)
 
         return objective_function
+
+
+
+
     # ----------------------------------------------------------------------------------------------------
 
     # 5TH QAA STRATEGY: "ROY SAFETY FIRST RATIO"
