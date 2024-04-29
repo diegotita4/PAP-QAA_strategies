@@ -31,4 +31,5 @@ yfinance >= 0.2.36
 matplotlib >= 3.8.3
 streamlit >= 1.33.0
 pyportfolioopt >= 1.5.5
+streamlit_extras >= 0.4.2
 pandas_datareader >= 0.10.0
