@@ -26,8 +26,6 @@ def show_qaa():
     if submitted:
         calculate_all_strategies(tickers, start_date_data, end_date_data, rf, lower_bound, higher_bound)
 
-
-
 def calculate_all_strategies(tickers, start_date, end_date, rf, lower_bound, higher_bound):
     optimization_models = ['SLSQP', 'Monte Carlo', 'COBYLA']
     strategies = ['Minimum Variance', 'Omega Ratio', 'Semivariance', 'Roy Safety First Ratio',
@@ -46,14 +44,24 @@ def calculate_all_strategies(tickers, start_date, end_date, rf, lower_bound, hig
             if qaa_instance.optimal_weights is not None:
                 formatted_weights = [f"{weight * 100:.2f}%" for weight in qaa_instance.optimal_weights]
                 portfolio_return, portfolio_volatility = calculate_portfolio_metrics(qaa_instance)
-                results[strategy] = results[strategy].append({'Modelo': model, 'Pesos Óptimos': ", ".join(formatted_weights), 'Rendimiento Estimado': f"{portfolio_return:.2f}%", 'Volatilidad Estimada': f"{portfolio_volatility:.2f}%"}, ignore_index=True)
+                new_row = pd.DataFrame({
+                    'Modelo': [model], 
+                    'Pesos Óptimos': [", ".join(formatted_weights)], 
+                    'Rendimiento Estimado': [f"{portfolio_return:.2f}%"], 
+                    'Volatilidad Estimada': [f"{portfolio_volatility:.2f}%"]
+                })
             else:
-                results[strategy] = results[strategy].append({'Modelo': model, 'Pesos Óptimos': "No convergió o no implementado", 'Rendimiento Estimado': "N/A", 'Volatilidad Estimada': "N/A"}, ignore_index=True)
+                new_row = pd.DataFrame({
+                    'Modelo': [model], 
+                    'Pesos Óptimos': ["No convergió o no implementado"], 
+                    'Rendimiento Estimado': ["N/A"], 
+                    'Volatilidad Estimada': ["N/A"]
+                })
+            results[strategy] = pd.concat([results[strategy], new_row], ignore_index=True)
 
     display_results(results)
 
 def calculate_portfolio_metrics(qaa_instance):
-    # Check if the necessary methods are available in the QAA instance
     if hasattr(qaa_instance, 'calculate_portfolio_return') and hasattr(qaa_instance, 'calculate_portfolio_volatility'):
         portfolio_return = qaa_instance.calculate_portfolio_return()
         portfolio_volatility = qaa_instance.calculate_portfolio_volatility()
@@ -61,9 +69,7 @@ def calculate_portfolio_metrics(qaa_instance):
     else:
         raise AttributeError("QAA instance is missing required methods.")
 
-
 def display_results(results):
     for strategy, data in results.items():
         st.subheader(f"{strategy}")
-        st.table(data) 
-
+        st.table(data)
