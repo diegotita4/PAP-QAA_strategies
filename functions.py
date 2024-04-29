@@ -263,14 +263,27 @@ class QAA:
     def calculate_portfolio_return(self):
         """Calculates the expected portfolio return based on current optimal weights."""
         if self.optimal_weights is not None and self.returns is not None:
-            return np.dot(self.optimal_weights, self.returns.mean()) * 252  # annualized return
-        return None
+            portfolio_return = np.dot(self.optimal_weights, self.returns.mean()) * 252  # annualizing the return
+            return portfolio_return
+        else:
+            return 0  # Return 0 or handle appropriately if weights or returns are not defined
+
 
     def calculate_portfolio_volatility(self):
         """Calculates the portfolio volatility based on current optimal weights."""
         if self.optimal_weights is not None and self.returns is not None:
             return np.sqrt(np.dot(self.optimal_weights.T, np.dot(self.returns.cov() * 252, self.optimal_weights)))  # annualized volatility
         return None
+    
+    def calculate_portfolio_metrics(qaa_instance):
+        # Check if the necessary methods are available in the QAA instance
+        if hasattr(qaa_instance, 'calculate_portfolio_return') and hasattr(qaa_instance, 'calculate_portfolio_volatility'):
+            portfolio_return = qaa_instance.calculate_portfolio_return()
+            portfolio_volatility = qaa_instance.calculate_portfolio_volatility()
+            return portfolio_return * 100, portfolio_volatility * 100
+        else:
+            raise AttributeError("QAA instance is missing required methods.")
+
 
     def load_data(self):
         """Loads historical data for the assets and benchmark."""

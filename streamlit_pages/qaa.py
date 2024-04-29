@@ -26,11 +26,6 @@ def show_qaa():
     if submitted:
         calculate_all_strategies(tickers, start_date_data, end_date_data, rf, lower_bound, higher_bound)
 
-def calculate_portfolio_metrics(qaa_instance):
-    portfolio_return = qaa_instance.calculate_portfolio_return()
-    portfolio_volatility = qaa_instance.calculate_portfolio_volatility()
-    return portfolio_return, portfolio_volatility
-
 
 
 def calculate_all_strategies(tickers, start_date, end_date, rf, lower_bound, higher_bound):
@@ -58,10 +53,14 @@ def calculate_all_strategies(tickers, start_date, end_date, rf, lower_bound, hig
     display_results(results)
 
 def calculate_portfolio_metrics(qaa_instance):
-    # Asigna valores de rendimiento y volatilidad a partir de la instancia QAA, asegúrate de que estos métodos estén implementados
-    portfolio_return = qaa_instance.calculate_portfolio_return()  # Debe ser implementado en QAA
-    portfolio_volatility = qaa_instance.calculate_portfolio_volatility()  # Debe ser implementado en QAA
-    return portfolio_return * 100, portfolio_volatility * 100
+    # Check if the necessary methods are available in the QAA instance
+    if hasattr(qaa_instance, 'calculate_portfolio_return') and hasattr(qaa_instance, 'calculate_portfolio_volatility'):
+        portfolio_return = qaa_instance.calculate_portfolio_return()
+        portfolio_volatility = qaa_instance.calculate_portfolio_volatility()
+        return portfolio_return * 100, portfolio_volatility * 100
+    else:
+        raise AttributeError("QAA instance is missing required methods.")
+
 
 def display_results(results):
     for strategy, data in results.items():
