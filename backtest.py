@@ -15,6 +15,7 @@ def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, r
                          commission=0.0025, lower_bound=0.10, higher_bound=0.99):
     start_date = pd.to_datetime(start_backtesting)
     end_date = pd.to_datetime(end_date)
+    initial_portfolio_value = float(initial_portfolio_value)
     portfolio_value = initial_portfolio_value
     previous_num_shares = pd.Series(0, index=tickers)
     results = []

@@ -6,6 +6,9 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from backtest import dynamic_backtesting
 import random
+from streamlit_extras.badges import badge
+from streamlit_extras.add_vertical_space import add_vertical_space
+from streamlit_extras.stoggle import stoggle
 
 list_strategy = ['Minimum Variance', 'Omega Ratio', 'Semivariance',
                  'Roy Safety First Ratio', 'Sortino Ratio', 'Fama French', 'CVaR', 
@@ -50,12 +53,11 @@ def display_results(strategy_results, show_all_strategies):
         strategies_to_display = random.sample(sorted_strategies, 4)
 
     for strategy, (result_df, daily_data, portfolio_values) in strategies_to_display:
-        st.markdown(f"### {strategy}")
+        st.subheader(f":violet[{strategy}]", divider="violet")
         st.dataframe(result_df.assign(total_portfolio_value=lambda x: x['total_portfolio_value'].apply("${:,.2f}".format)))
         plot_strategy_performance(daily_data, portfolio_values, strategy)
         final_value = portfolio_values[-1]
-        st.metric(label="Final Portfolio Value", value=f"${final_value:,.2f} (USD)")
-        st.markdown("---")
+        st.markdown(f":violet[## ${final_value:,.2f} (USD)]")
 
 def plot_strategy_performance(daily_data, portfolio_values, strategy_name):
     colors = px.colors.qualitative.Plotly
@@ -63,31 +65,43 @@ def plot_strategy_performance(daily_data, portfolio_values, strategy_name):
     fig = px.line(
         x=daily_data.index, 
         y=portfolio_values, 
-        title=f"{strategy_name} - Valor del Portafolio a lo largo del Backtesting",
-        labels={"x": "Date", "y": "Valor del Portafolio ($)"},
+        title="VALOR DEL PORTAFOLIO EN EL TIEMPO",
+        labels={"x": "Fecha", "y": "Valor del portafolio ($)"},
         line_shape='linear'
     )
     fig.update_traces(line=dict(color=colors[strategy_index]))
     st.plotly_chart(fig, use_container_width=True)
 
 def show_basic():
-    st.title('Backtesting Sencillo (Un método)')
-    show_all_strategies = st.checkbox("Mostrar más estrategias")
+    st.title(':violet[Backtesting general]')
+    st.write("Selecciona los parámetros con el objetivo de realizar el backtesting para las estrategias QAA.")
+
+    stoggle("Estrategias QAA usadas",
+            """Mínima Varianza, Máximo Ratio de Sharpe, Semivarianza, Omega, Hierarchical Risk Parity (HRP), Conditional Value ar Risk (CVaR), Black Litterman, Famma French, Total Return AA, Roy Safety First Ratio, Sortino Ratio.""")
+    
+    add_vertical_space(5)
+
+    show_all_strategies = st.checkbox("CALCULA EL RESTO DE ESTRATEGIAS QAA")
     with st.form("input_form"):
         col1, col2, col3 = st.columns(3)
-        with col1:
-            tickers = st.text_input("Tickers:", "ABBV, MET, OXY, PERI")
-            start_date_data = st.text_input("Fecha histórica:", "2020-01-02")
-            start_backtesting = st.text_input("Fecha inicio:", "2023-01-23")
-            end_date = st.text_input("Fecha final:", "2024-01-23")
-        with col2:
-            rebalance_frequency_months = st.slider("Frecuencia de rebalanceo (M):", 1, 12, 6)
-            rf = st.number_input("Tasa libre de riesgo:", value=0.02, format="%.4f")
-        with col3:
-            initial_portfolio_value = st.text_input("Valor del portafolio:", value='1,000,000')
-            commission = st.number_input("Comisión por transacción:", value=0.0025, format="%.4f")
 
-        submitted = st.form_submit_button("Ejecutar Backtesting....")
+        add_vertical_space(2)
+
+        with col1:
+            tickers = st.text_input("TICKERS", "A, B")
+            start_date_data = st.text_input("FECHA INICIAL (aaaa-mm-dd)", "2020-01-02")
+            end_date = st.text_input("FECHA FINAL (aaaa-mm-dd)", "2024-01-23")
+        with col2:
+            start_backtesting = st.text_input("FECHA INICIAL DE REBALANCEO (aaaa-mm-dd)", "2023-01-23")
+            rebalance_frequency_months = st.slider("REBALANCEO (meses)", 1, 12, 1)
+            rf = st.number_input("TASA LIBRE DE RIESGO (%)", value=0.0000, format="%.4f")
+        with col3:
+            initial_portfolio_value = st.text_input("VALOR INICIAL DEL PORTAFOLIO ($)", value='0')
+            commission = st.number_input("COMISIÓN (%)", value=0.0000, format="%.4f")
+
+        submitted = st.form_submit_button(":violet[CALCULA BACKTESTING]", type="secondary", use_container_width=True)
+
+    add_vertical_space(5)
 
     if submitted:
         if not (validate_date(start_date_data) and validate_date(start_backtesting) and validate_date(end_date)):
@@ -107,5 +121,9 @@ def show_basic():
         strategy_results = run_backtesting(tickers_list, start_date_data, start_backtesting, end_date,
                                            rebalance_frequency_months, rf, parsed_initial_value, commission)
         display_results(strategy_results, show_all_strategies)
+
+    add_vertical_space(5)
+
+    badge(type="github", name="diegotita4/PAP")
 
 show_basic()

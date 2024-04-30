@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_pages.home import show_home
+
 from streamlit_pages.qaa import show_qaa
 from streamlit_pages.basic import show_basic
 from streamlit_pages.backtesting import show_backtesting
@@ -16,19 +16,30 @@ def load_data(tickers, start_date, end_date):
     return strategy
 
 def main():
-    st.sidebar.title("Menú de Navegación")
+    st.sidebar.title("MENÚ DE NAVEGACIÓN")
     # Lista de opciones en el menú lateral
-    choice = st.sidebar.radio("Ir a", ("Inicio", "Cálculo estrategias QAA", "Visualización de Resultados", "Backtesting sencillo"))
+    choice = st.sidebar.radio("", ("Cálculo de estrategias QAA", "Backtesting individual", "Backtesting general"))
 
     # Navegación entre diferentes páginas en la aplicación
-    if choice == "Inicio":
-        show_home()
-    elif choice == "Cálculo estrategias QAA":
+    if choice == "Cálculo estrategias QAA":
         show_qaa()
-    elif choice == "Visualización de Resultados":
+    elif choice == "Backtesting individual":
         show_backtesting()
-    elif choice == 'Backtesting sencillo':
+    elif choice == 'Backtesting general':
         show_basic()
+
+    # Botones de navegación en el menú lateral
+    #if st.sidebar.button("Cálculo estrategias QAA", type="primary", use_container_width=True):
+        # Muestra la página de cálculo de estrategias QAA
+        #show_qaa()
+
+    #if st.sidebar.button("Visualización de Resultados", type="primary", use_container_width=True):
+        # Muestra la página de visualización de resultados
+        #show_backtesting()
+
+    #if st.sidebar.button("Backtesting sencillo", type="primary", use_container_width=True):
+        # Muestra la página de backtesting sencillo
+        #show_basic()
 
 if __name__ == "__main__":
     main()
