@@ -15,6 +15,9 @@ def show_qaa():
     add_vertical_space(5)
 
     with st.form("input_form"):
+
+        add_vertical_space(2)
+        
         col1, col2, col3 = st.columns(3)
 
         add_vertical_space(2)

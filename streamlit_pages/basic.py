@@ -57,7 +57,9 @@ def display_results(strategy_results, show_all_strategies):
         st.dataframe(result_df.assign(total_portfolio_value=lambda x: x['total_portfolio_value'].apply("${:,.2f}".format)))
         plot_strategy_performance(daily_data, portfolio_values, strategy)
         final_value = portfolio_values[-1]
-        st.markdown(f":violet[## ${final_value:,.2f} (USD)]")
+        st.markdown(f":violet[${final_value:,.2f} (USD)]")
+
+        add_vertical_space(3)
 
 def plot_strategy_performance(daily_data, portfolio_values, strategy_name):
     colors = px.colors.qualitative.Plotly
@@ -83,6 +85,9 @@ def show_basic():
 
     show_all_strategies = st.checkbox("CALCULA EL RESTO DE ESTRATEGIAS QAA")
     with st.form("input_form"):
+
+        add_vertical_space(2)
+        
         col1, col2, col3 = st.columns(3)
 
         add_vertical_space(2)

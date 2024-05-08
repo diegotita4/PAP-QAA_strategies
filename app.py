@@ -18,10 +18,10 @@ def load_data(tickers, start_date, end_date):
 def main():
     st.sidebar.title("MENÚ DE NAVEGACIÓN")
     # Lista de opciones en el menú lateral
-    choice = st.sidebar.radio("", ("Cálculo de estrategias QAA", "Backtesting individual", "Backtesting general"))
+    choice = st.sidebar.radio(" ", ("Cálculo de estrategias QAA", "Backtesting individual", "Backtesting general"))
 
     # Navegación entre diferentes páginas en la aplicación
-    if choice == "Cálculo estrategias QAA":
+    if choice == "Cálculo de estrategias QAA":
         show_qaa()
     elif choice == "Backtesting individual":
         show_backtesting()
@@ -29,16 +29,13 @@ def main():
         show_basic()
 
     # Botones de navegación en el menú lateral
-    #if st.sidebar.button("Cálculo estrategias QAA", type="primary", use_container_width=True):
-        # Muestra la página de cálculo de estrategias QAA
+    #if st.sidebar.button(":violet[Cálculo de estrategias QAA]", type="secondary", use_container_width=True):
         #show_qaa()
 
-    #if st.sidebar.button("Visualización de Resultados", type="primary", use_container_width=True):
-        # Muestra la página de visualización de resultados
+    #if st.sidebar.button(":violet[Backtesting individual]", type="secondary", use_container_width=True):
         #show_backtesting()
 
-    #if st.sidebar.button("Backtesting sencillo", type="primary", use_container_width=True):
-        # Muestra la página de backtesting sencillo
+    #if st.sidebar.button(":violet[Backtesting general]", type="secondary", use_container_width=True):
         #show_basic()
 
 if __name__ == "__main__":
