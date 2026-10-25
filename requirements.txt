@@ -4,7 +4,7 @@
 # -- script: requirements.txt - Text file with the required libraries for the project                    -- #
 # -- authors: diegotita4 - Antonio-IF - JoAlfonso - J3SVS - Oscar148                                     -- #
 # -- license: GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007                                       -- #
-# -- repository: https://github.com/diegotita4/PAP                                                       -- #
+# -- repository: https://github.com/diegotita4/PAP-QAA_strategies                                        -- #
 # -- --------------------------------------------------------------------------------------------------- -- #
 
 # OPTION 1: Terminal:
