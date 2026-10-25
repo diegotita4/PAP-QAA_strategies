@@ -290,7 +290,7 @@ class QAA:
         if not self.tickers or self.benchmark_ticker is None:
             raise ValueError("You must provide a list of tickers and a benchmark ticker.")
         tickers_with_benchmark = self.tickers + [self.benchmark_ticker] if self.benchmark_ticker not in self.tickers else self.tickers
-        data = yf.download(tickers_with_benchmark, start=self.start_date, end=self.end_date)['Adj Close']
+        data = yf.download(tickers_with_benchmark, start=self.start_date, end=self.end_date, auto_adjust=False)['Adj Close']
         benchmark_data = data.pop(self.benchmark_ticker) if self.benchmark_ticker in data else None
         return data, benchmark_data
     
