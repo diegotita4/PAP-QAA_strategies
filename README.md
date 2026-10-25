@@ -1,35 +1,56 @@
+# Asset Allocation Backtesting
 
-# GitHub Repository of "Quantitative Asset Allocation" (QAA)
+Interactive Streamlit dashboard that builds and backtests 11 quantitative asset-allocation strategies with three optimization methods, all implemented from scratch in Python.
 
+Professional Application Project (PAP I) · ITESO · Jan – May 2024 · Team of 5
+📄 [Full report (ITESO institutional repository)](https://rei.iteso.mx/items/4d803520-dc49-4ade-93cb-4175e064d78d)
 
-## Description
+## What it does
 
-This project represents a meticulous and systematic exploration in the field of Quantitative Asset Allocation (QAA). Its central objective is to conduct the backtesting of QAA strategies using historical data, evaluating and optimizing investment portfolios. Through a detailed analysis, the aim is to identify assets efficiently aligned with the investment profiles of investors, considering various criteria, strategic and specific objectives. The main focus on backtesting QAA strategies aims to discern the most effective methodologies for portfolio optimization, evaluating their historical performance under diverse market conditions. This approach will empower investors to make informed decisions regarding the composition of their portfolios, achieving a balance between risk and expected return in line with their specific investment profiles and objectives.
+- **Builds portfolios** for any set of tickers with 11 strategies: minimum variance, maximum Sharpe, semivariance, Omega, Hierarchical Risk Parity (HRP), CVaR, Black-Litterman, Fama-French, Total Return, Roy's Safety First and Sortino.
+- **Optimizes weights** with three methods: SLSQP, Monte Carlo (with Optuna) and COBYLA, with weight bounds of 10%–99% per asset.
+- **Backtests dynamically** with periodic rebalancing and a 0.25% commission per trade, compared against a benchmark (SPY by default).
+- **Validates the implementation** against reference libraries (PyPortfolioOpt and empyrical) in `validations.ipynb`.
 
+## Dashboard
 
-## Install dependencies
+Three pages, in Spanish:
 
-*Install all the dependencies stated in the requirements.txt file, just run the following command in terminal:*
+1. **Cálculo de estrategias QAA:** optimal weights for each strategy.
+2. **Backtesting individual:** one strategy and one optimizer over time.
+3. **Backtesting general:** all strategies compared.
 
-        pip install -r requirements.txt
-        
-*Or you can manually install one by one using the name and version in the file.*
+## Tech stack
 
+Python · pandas · NumPy · SciPy · Optuna · Streamlit · Plotly · matplotlib · yfinance · pandas-datareader (Fama-French factors)
 
-## Functionalities
+## How to run
 
-The functionality of the project is based on various stages to ensure a comprehensive and effective approach. It begins with a clear definition of the project, where primary and secondary objectives are established. The research and documentation are carried out thoroughly, encompassing key concepts, QAA strategies, and optimization models. Next, the code is developed, applying the QAA strategies and optimization models defined earlier.
+```bash
+git clone https://github.com/diegotita4/PAP-QAA_strategies.git
+cd PAP-QAA_strategies
+python -m venv env
+source env/bin/activate        # Windows: env\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-The code implementation is done explicitly, utilizing object-oriented programming (OOP) and avoiding external libraries to ensure a clear understanding of the process. Subsequently, a dashboard is created for results analysis, providing a visual tool that facilitates data interpretation and monitoring of the implemented strategies.
+## Repository structure
 
-In addition to the mentioned steps, the project incorporates detailed documentation of the QAA strategies used, as well as the models and optimization algorithms employed. This approach ensures complete transparency in the process and provides a solid foundation for future evaluations and improvements.
+```
+app.py               Streamlit entry point
+functions.py         QAA class: strategies and optimizers
+backtest.py          dynamic backtesting with rebalancing and commissions
+streamlit_pages/     dashboard pages
+validations.ipynb    validation against PyPortfolioOpt and empyrical
+```
 
+The report, documentation and presentation are included as PDF, DOCX and PPTX.
 
-## Authors
+## Team
 
-Project carried out by students from the Financial Engineering program at the Instituto Tecnologico y de Estudios Superiores de Occidente (ITESO): Enriquez Nares Diego Emilio (diegotita4), Mugica Liparoli Juan Antonio (Antonio-IF), Martínez Ramírez José Alfonso (JoAlfonso), Palomera Gaytan Jesús Emmanuel (J3SVS), and Alvarado Garnica Óscar Uriel (Oscar148).
+Diego Emilio Enriquez Nares ([@diegotita4](https://github.com/diegotita4)) · Juan Antonio Mugica Liparoli ([@Antonio-IF](https://github.com/Antonio-IF)) · José Alfonso Martínez Ramírez ([@JoAlfonso](https://github.com/JoAlfonso)) · Jesús Emmanuel Palomera Gaytán ([@J3SVS](https://github.com/J3SVS)) · Óscar Uriel Alvarado Garnica ([@Oscar148](https://github.com/Oscar148))
 
 ## License
-**GNU General Public License v3.0** 
 
-*Permissions of this strong copyleft license are conditioned on making available complete source code of licensed works and modifications, which include larger works using a licensed work, under the same license. Copyright and license notices must be preserved. Contributors provide an express grant of patent rights.*
+GNU General Public License v3.0
