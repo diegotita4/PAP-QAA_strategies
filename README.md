@@ -53,8 +53,8 @@ Python · pandas · NumPy · SciPy · Optuna · Streamlit · Plotly · matplotli
 Requires Python 3.11 (empyrical 0.5.5 does not install on Python 3.12 or newer).
 
 ```bash
-git clone https://github.com/diegotita4/PAP-QAA_strategies.git
-cd PAP-QAA_strategies
+git clone https://github.com/diegotita4/PAP-QAA-strategies.git
+cd PAP-QAA-strategies
 python -m venv env
 source env/bin/activate        # Windows: env\Scripts\activate
 pip install -r requirements.txt
