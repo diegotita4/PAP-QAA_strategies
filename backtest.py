@@ -140,7 +140,7 @@ def dynamic_backtesting(tickers, start_date_data, start_backtesting, end_date, r
     daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'end_date'})
 
     # Fetch historical stock data using yfinance for the entire range of daily_data
-    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max())
+    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max(), auto_adjust=False)
     prices = stock_data['Adj Close']
 
     # Update the index of daily_data to match the dates from the stock data
@@ -173,7 +173,7 @@ def plot_portfolio_value(resultados_backtesting, tickers):
     daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'end_date'})
 
     # Fetch historical stock data using yfinance for the entire range of daily_data
-    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max())
+    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max(), auto_adjust=False)
     prices = stock_data['Adj Close']
 
     # Update the index of daily_data to match the dates from the stock data
@@ -347,7 +347,7 @@ def dynamic_backtesting_x2(tickers, start_date_data, start_backtesting, end_date
     daily_data = daily_data.join(df, how='left').ffill().reset_index().rename(columns={'index': 'end_date'})
 
     # Fetch historical stock data using yfinance for the entire range of daily_data
-    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max())
+    stock_data = yf.download(tickers, start=daily_data['end_date'].min(), end=daily_data['end_date'].max(), auto_adjust=False)
     prices = stock_data['Adj Close']
 
     # Update the index of daily_data to match the dates from the stock data
