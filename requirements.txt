@@ -19,17 +19,18 @@
 # 3-. Activate it in View -> Command Palette -> Terminal: Create New Integrated Terminal.
 # 4-. Install the libraries from the file using python -m pip install -r requirements.txt.
 
-numpy >= 1.26.4
-pandas >= 2.2.0
-scipy >= 1.11.4
-datetime >= 5.5
-optuna >= 3.6.1
-plotly >= 5.9.0
-seaborn >= 0.13.2
-empyrical >= 0.5.5
-yfinance >= 0.2.36
-matplotlib >= 3.8.3
-streamlit >= 1.33.0
-pyportfolioopt >= 1.5.5
-streamlit_extras >= 0.4.2
-pandas_datareader >= 0.10.0
+numpy == 1.26.4
+pandas == 2.2.2
+scipy == 1.13.1
+datetime == 5.5
+optuna == 3.6.1
+plotly == 5.22.0
+seaborn == 0.13.2
+empyrical == 0.5.5
+yfinance == 1.7.0
+matplotlib == 3.8.4
+streamlit == 1.33.0
+pyarrow == 19.0.1
+pyportfolioopt == 1.5.5
+streamlit_extras == 0.4.2
+pandas_datareader == 0.10.0
