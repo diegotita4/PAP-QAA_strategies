@@ -130,5 +130,3 @@ def show_basic():
     add_vertical_space(5)
 
     badge(type="github", name="diegotita4/PAP")
-
-show_basic()
