@@ -8,7 +8,7 @@ Professional Application Project (PAP I) · ITESO · Jan – May 2024 · Team of
 ## What it does
 
 - **Builds portfolios** for any set of tickers with 11 strategies: minimum variance, maximum Sharpe, semivariance, Omega, Hierarchical Risk Parity (HRP), CVaR, Black-Litterman, Fama-French, Total Return, Roy's Safety First and Sortino.
-- **Optimizes weights** with three methods: SLSQP, Monte Carlo (with Optuna) and COBYLA, with weight bounds of 10%–99% per asset.
+- **Optimizes weights** with three methods: SLSQP, Monte Carlo (with Optuna) and COBYLA, with configurable weight bounds per asset.
 - **Backtests dynamically** with periodic rebalancing and a 0.25% commission per trade, compared against a benchmark (SPY by default).
 - **Validates the implementation** against reference libraries (PyPortfolioOpt and empyrical) in `validations.ipynb`.
 
@@ -20,11 +20,37 @@ Three pages, in Spanish:
 2. **Backtesting individual:** one strategy and one optimizer over time.
 3. **Backtesting general:** all strategies compared.
 
+![Cálculo de estrategias QAA](images/strategies/strategies-1.jpg)
+
+![Backtesting general](images/backtesting/backtesting-02.jpg)
+
+<details>
+<summary>More screenshots</summary>
+
+![Cálculo de estrategias QAA](images/strategies/strategies-2.jpg)
+![Cálculo de estrategias QAA](images/strategies/strategies-3.jpg)
+![Cálculo de estrategias QAA](images/strategies/strategies-4.jpg)
+![Backtesting general](images/backtesting/backtesting-01.jpg)
+![Backtesting general](images/backtesting/backtesting-03.jpg)
+![Backtesting general](images/backtesting/backtesting-04.jpg)
+![Backtesting general](images/backtesting/backtesting-05.jpg)
+![Backtesting general](images/backtesting/backtesting-06.jpg)
+![Backtesting general](images/backtesting/backtesting-07.jpg)
+![Backtesting general](images/backtesting/backtesting-08.jpg)
+![Backtesting general](images/backtesting/backtesting-09.jpg)
+![Backtesting general](images/backtesting/backtesting-10.jpg)
+![Backtesting general](images/backtesting/backtesting-11.jpg)
+![Backtesting general](images/backtesting/backtesting-12.jpg)
+
+</details>
+
 ## Tech stack
 
 Python · pandas · NumPy · SciPy · Optuna · Streamlit · Plotly · matplotlib · yfinance · pandas-datareader (Fama-French factors)
 
 ## How to run
+
+Requires Python 3.11 (empyrical 0.5.5 does not install on Python 3.12 or newer).
 
 ```bash
 git clone https://github.com/diegotita4/PAP-QAA_strategies.git
